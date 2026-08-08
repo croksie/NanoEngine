@@ -1,5 +1,7 @@
-#include "RHI/window.h"
-#include "spdlog/spdlog.h"
+#include "core/window.h"
+
+#include <spdlog/spdlog.h>
+
 
 Window::Window(const int width, const int height, const char* title) {
 
@@ -14,16 +16,9 @@ Window::Window(const int width, const int height, const char* title) {
         spdlog::critical("Error while creating window in window.cpp");
         throw std::runtime_error("Error while creating window");
     }
-
     glfwMakeContextCurrent(m_window);
-    while (!glfwWindowShouldClose(m_window))
-    {
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glfwSwapBuffers(m_window);
-        
-        glfwPollEvents();
-    }
-
+}
+Window::~Window()
+{
     glfwTerminate();
 }

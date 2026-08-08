@@ -1,10 +1,15 @@
 #include <spdlog/spdlog.h>
-#include <RHI/window.h>
+#include <core/window.h>
+#include <rendering/Renderer.h>
 
 int main() 
 {
     spdlog::info("NanoEngine starting ...");
-    const Window window(1280, 720, "NanoEngine");
+    Window window(1280, 720, "NanoEngine");
+
+    Renderer renderer;
+    renderer.Initialize(&window);
+
     return 0;
     
 }
