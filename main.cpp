@@ -1,10 +1,11 @@
-#include <spdlog/spdlog.h>
-#include <core/window.h>
+#include <core/Window.h>
 #include <rendering/Renderer.h>
+#include <utils/Log.h>
 
 int main() 
 {
-    spdlog::info("NanoEngine starting ...");
+    ENGINE_LOG_INFO("NanoEngine starting ...");
+
     Window window(1280, 720, "NanoEngine");
 
     Renderer renderer;

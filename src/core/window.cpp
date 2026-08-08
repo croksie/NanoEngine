@@ -1,19 +1,19 @@
-#include "core/window.h"
+#include "core/Window.h"
 
-#include <spdlog/spdlog.h>
+#include <utils/Log.h>
 
 
 Window::Window(const int width, const int height, const char* title) {
 
     if (!glfwInit()){
-        spdlog::critical("Error while initializing GLFW");
+       ENGINE_LOG_CRITICAL("Error while initializing GLFW");
         throw std::runtime_error("Error while initializing GLFW");
     }
 
     m_window = glfwCreateWindow(width, height, title, NULL, NULL);
     if(!m_window){
         glfwTerminate();
-        spdlog::critical("Error while creating window in window.cpp");
+        ENGINE_LOG_CRITICAL("Error while creating window in window.cpp");
         throw std::runtime_error("Error while creating window");
     }
     glfwMakeContextCurrent(m_window);

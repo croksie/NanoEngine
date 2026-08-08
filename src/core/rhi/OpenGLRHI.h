@@ -1,7 +1,7 @@
 #pragma once
 #include "core/rhi/RHI.h"
 
-#include <core/window.h>
+#include <core/Window.h>
 
 class OpenGLRHI : public RHI {
 
