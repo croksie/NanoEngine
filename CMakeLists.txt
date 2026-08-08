@@ -122,13 +122,10 @@ FetchContent_MakeAvailable(spdlog)
 # Configuration de l'Exécutable du Moteur 3D
 # ==============================================================================
 
-# Fichiers sources de votre projet (à adapter selon votre arborescence)
-set(ENGINE_SOURCES
-    main.cpp
+# Fichiers sources de votre projet
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h")
 
-)
-
-add_executable(NanoEngine ${ENGINE_SOURCES})
+add_executable(NanoEngine main.cpp ${SOURCES})
 
 # Association des bibliothèques externes à votre exécutable
 target_link_libraries(NanoEngine PRIVATE
@@ -139,6 +136,10 @@ target_link_libraries(NanoEngine PRIVATE
     imgui
     spdlog::spdlog
 )
+
+if(WIN32)
+    target_link_libraries(NanoEngine PRIVATE opengl32)
+endif()
 
 # Dossiers d'en-tête de votre projet
 target_include_directories(NanoEngine PRIVATE
