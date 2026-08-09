@@ -1,4 +1,5 @@
-#include "core/rhi/OpenGLRHI.h"
+#include "core/rhi/opengl/opengl_rhi.h"
+
 
 void OpenGLRHI::Initialize(Window* window)
 {

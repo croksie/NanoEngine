@@ -1,6 +1,6 @@
-#include <core/Window.h>
-#include <rendering/Renderer.h>
-#include <utils/Log.h>
+#include <core/window.h>
+#include <rendering/renderer.h>
+#include <utils/log.h>
 
 int main() 
 {

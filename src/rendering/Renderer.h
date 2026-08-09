@@ -1,6 +1,6 @@
 #pragma once
-#include <core/rhi/RHI.h>
-#include <core/rhi/OpenGLRHI.h>
+#include <core/rhi/rhi.h>
+#include <core/rhi/opengl/opengl_rhi.h>
 
 #include <memory>
 

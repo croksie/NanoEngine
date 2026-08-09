@@ -1,7 +1,6 @@
-#include "core/Window.h"
+#include "core/window.h"
 
 #include <utils/Log.h>
-#include "Window.h"
 
 
 Window::Window() {
