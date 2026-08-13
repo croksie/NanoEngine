@@ -5,14 +5,19 @@
 int main() 
 {
 
-    spdlog::set_level(spdlog::level::debug);
+    spdlog::set_level(spdlog::level::info);
 
     ENGINE_LOG_INFO("NanoEngine starting ...");
 
     Window window;
 
     Renderer renderer;
-    renderer.Initialize(&window);
+    renderer.initialize(&window);
+
+    while(!window.windowSouldClose()) {
+        renderer.render();
+    }
+
 
     return 0;
     
