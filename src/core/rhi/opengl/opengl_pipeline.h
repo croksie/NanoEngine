@@ -10,14 +10,17 @@
 
 class OpenGLPipeline : public Pipeline{
 public:
-    OpenGLPipeline();
+    OpenGLPipeline() = delete;
+    OpenGLPipeline(PipelineInfo& info);
     ~OpenGLPipeline() {}
     void bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) override;
 
-    GLuint getPipelineID() { return m_pipelineID; }
+    GLuint getVertexArrayID() { return m_vertexArrayID; }
+    GLuint getShaderProgramID() { return m_shaderProgamID; }
 
 
 private:
-    GLuint m_pipelineID;
+    GLuint m_vertexArrayID;
+    GLuint m_shaderProgamID;
 
 };
