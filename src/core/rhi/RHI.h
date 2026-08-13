@@ -2,6 +2,7 @@
 #include "core/window.h"
 #include "core/rhi/rhi_buffer.h"
 #include "core/rhi/rhi_pipeline.h"
+#include "core/rhi/rhi_shader.h"
 
 
 #include <memory>
