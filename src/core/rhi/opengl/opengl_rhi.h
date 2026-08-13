@@ -1,15 +1,34 @@
 #pragma once
 #include "core/rhi/rhi.h"
+#include "core/window.h"
 
-#include <core/window.h>
+#include "core/rhi/opengl/opengl_buffer.h"
+#include "core/rhi/opengl/opengl_pipeline.h"
+
+#include <memory>
+#include <string>
 
 class OpenGLRHI : public RHI {
 
 public:
-    void Initialize(Window* window) override;
-    void Shutdown() override {}
+    void initialize(Window* window) override;
+    void shutdown() override {}
 
+    void beginFrame() override;
+    void endFrame() override;
+
+    void clear() override;
+    void draw(std::shared_ptr<Pipeline> pipeline) override;
+
+    std::shared_ptr<Buffer> createBuffer(float vertices[], size_t size) override;
+    void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
+
+    std::shared_ptr<Pipeline> createPipeline() override;
+    void bindPipeline() override;
 
 private:
     Window* m_window = nullptr;
+
+    GLuint compileShader();
+    GLuint m_shader;
 };
