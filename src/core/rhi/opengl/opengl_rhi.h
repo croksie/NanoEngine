@@ -23,12 +23,9 @@ public:
     std::shared_ptr<Buffer> createBuffer(float vertices[], size_t size) override;
     void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
 
-    std::shared_ptr<Pipeline> createPipeline() override;
-    void bindPipeline() override;
+    std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) override;
+    void bindPipeline(Pipeline* pipeline) override;
 
 private:
     Window* m_window = nullptr;
-
-    GLuint compileShader();
-    GLuint m_shader;
 };

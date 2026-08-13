@@ -21,8 +21,8 @@ public:
     virtual std::shared_ptr<Buffer> createBuffer(float vertices[], size_t size) = 0;
     virtual void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) = 0;
 
-    virtual std::shared_ptr<Pipeline> createPipeline() = 0;
-    virtual void bindPipeline() = 0;
+    virtual std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) = 0;
+    virtual void bindPipeline(Pipeline* pipeline) = 0;
 
     virtual void initialize(Window* window) = 0;
     virtual void shutdown() = 0;

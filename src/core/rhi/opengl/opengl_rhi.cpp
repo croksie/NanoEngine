@@ -78,59 +78,29 @@ void OpenGLRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared
 
 /// @brief Create a VAO
 /// @return An abstarct class Pipeline who contains an OpenGl Array object
-std::shared_ptr<Pipeline> OpenGLRHI::createPipeline() {
+std::shared_ptr<Pipeline> OpenGLRHI::createPipeline(PipelineInfo& info) {
     ENGINE_LOG_TRACE("OpenGLRHI::Creating pipeline...");
-    m_shader = compileShader();
-    return std::make_shared<OpenGLPipeline>();
+    return std::make_shared<OpenGLPipeline>(info);
 }
 
 
-void OpenGLRHI::bindPipeline() {
-
-    glUseProgram(m_shader); 
+void OpenGLRHI::bindPipeline(Pipeline* pipeline) {
+    if(pipeline == nullptr) {
+        ENGINE_LOG_CRITICAL("Not a valid pipeline");
+        throw std::runtime_error("Not a valid pipeline");
+    }
+    ENGINE_LOG_TRACE("OpenGLRHI::Binding pipeline...");
+    GLuint shaderProgram = static_cast<OpenGLPipeline*>(pipeline)->getShaderProgramID();
+    glUseProgram(shaderProgram); 
+    ENGINE_LOG_TRACE("OpenGLRHI::Pipeline binded");
 }
 
-GLuint OpenGLRHI::compileShader()
-{
-
-    const char *vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
-
-    const char *fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    " void main()\n"
-    "{\n"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\0";
-
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    return shaderProgram;
-}
 
 void OpenGLRHI::draw(std::shared_ptr<Pipeline> pipeline) {
     ENGINE_LOG_TRACE("OpenGLRHI::Drawing...");
     OpenGLPipeline* openGlPipeline = static_cast<OpenGLPipeline*>(pipeline.get());
     
-    glBindVertexArray(openGlPipeline->getPipelineID());
+    glBindVertexArray(openGlPipeline->getVertexArrayID());
     glDrawArrays(GL_TRIANGLES, 0, 3);
     ENGINE_LOG_TRACE("OpenGLRHI::Drawed");
 }
