@@ -7,8 +7,8 @@
 #include <string>
 #include <unordered_map>
 
-inline short shaderTypeToGLType(ShaderType type) {
-    std::unordered_map<ShaderType, short> map = {
+inline uint32_t shaderTypeToGLType(ShaderType type) {
+    std::unordered_map<ShaderType, uint32_t> map = {
         {ShaderType::VERTEX, GL_VERTEX_SHADER},
         {ShaderType::FRAGMENT, GL_FRAGMENT_SHADER}
     };
