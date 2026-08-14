@@ -3,8 +3,11 @@
 #include "core/rhi/opengl/opengl_rhi.h"
 
 #include "rendering/mesh.h"
+#include "rendering/material.h"
+#include "rendering/model.h"
 
 #include <memory>
+#include <vector>
 
 class Renderer {
 public:
@@ -14,7 +17,8 @@ public:
 private:
     std::unique_ptr<RHI> m_rhi;
 
-    Mesh m_mesh;
-    std::shared_ptr<Pipeline> m_pipeline;
+    std::vector<Model> models;
+
+    void createTestModel();
 
 };
