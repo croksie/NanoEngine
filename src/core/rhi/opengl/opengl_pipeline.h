@@ -18,9 +18,12 @@ public:
     GLuint getVertexArrayID() { return m_vertexArrayID; }
     GLuint getShaderProgramID() { return m_shaderProgamID; }
 
+    GLsizei getBindedNumberOfVerticles() { return m_numberOfVerticlesInBindedObject; };
 
 private:
     GLuint m_vertexArrayID;
     GLuint m_shaderProgamID;
+
+    GLsizei m_numberOfVerticlesInBindedObject;
 
 };

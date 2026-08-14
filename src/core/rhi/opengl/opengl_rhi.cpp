@@ -101,6 +101,6 @@ void OpenGLRHI::draw(std::shared_ptr<Pipeline> pipeline) {
     OpenGLPipeline* openGlPipeline = static_cast<OpenGLPipeline*>(pipeline.get());
     
     glBindVertexArray(openGlPipeline->getVertexArrayID());
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, openGlPipeline->getBindedNumberOfVerticles());
     ENGINE_LOG_TRACE("OpenGLRHI::Drawed");
 }

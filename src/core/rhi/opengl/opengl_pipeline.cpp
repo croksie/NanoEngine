@@ -33,6 +33,8 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
         buffer->getBufferId(),
         0,
         6*sizeof(float));
+
+    m_numberOfVerticlesInBindedObject = static_cast<GLsizei>(buffer->getSize() / (6 * sizeof(float)));
     ENGINE_LOG_TRACE("OpenGLRHI::VAO Created");
     glEnableVertexArrayAttrib(m_vertexArrayID, attribPos);
     glEnableVertexArrayAttrib(m_vertexArrayID, attribCol);
@@ -42,6 +44,4 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
 
     glVertexArrayAttribBinding(m_vertexArrayID, attribPos, vaoBindingPoint);
     glVertexArrayAttribBinding(m_vertexArrayID, attribCol, vaoBindingPoint);
-
-
 }
