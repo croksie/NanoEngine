@@ -6,25 +6,28 @@
 #include <string>
 #include "Renderer.h"
 
-std::string vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+std::string vertexShaderSource = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec3 aCol;
+out vec3 ourColor;
+void main() {
+    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    ourColor = aCol;
+})";
 
-std::string fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    " void main()\n"
-    "{\n"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    
-    "}\0";
+std::string fragmentShaderSource = R"(
+#version 330 core
+in vec3 ourColor;
+out vec4 FragColor;
+void main() {
+    FragColor = vec4(ourColor, 1.0f);
+})";
 
 float vertices[] = {
-    -1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f,
-     1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
-     0.0f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f
+    -0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+     0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
     };
 
 void Renderer::createTestModel(){
