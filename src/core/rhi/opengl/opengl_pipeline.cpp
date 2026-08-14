@@ -37,8 +37,8 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
     glEnableVertexArrayAttrib(m_vertexArrayID, attribPos);
     glEnableVertexArrayAttrib(m_vertexArrayID, attribCol);
 
-    glVertexArrayAttribFormat(m_vertexArrayID, attribPos, 3, GL_FLOAT, false, 0);
-    glVertexArrayAttribFormat(m_vertexArrayID, attribCol, 3, GL_FLOAT, false, 0);
+    glVertexArrayAttribFormat(m_vertexArrayID, attribPos, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribFormat(m_vertexArrayID, attribCol, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
 
     glVertexArrayAttribBinding(m_vertexArrayID, attribPos, vaoBindingPoint);
     glVertexArrayAttribBinding(m_vertexArrayID, attribCol, vaoBindingPoint);
