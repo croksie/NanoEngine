@@ -24,7 +24,7 @@ void Window::initializeWindow(const int width, const int height, const char * ti
 }
 
 Window::~Window() {
-
+    glfwDestroyWindow(m_window);
     glfwTerminate();
     ENGINE_LOG_DEBUG("Window deleted");
 }
