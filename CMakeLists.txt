@@ -1,42 +1,68 @@
 cmake_minimum_required(VERSION 3.25)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
-# Nom du projet et version C++
-project(NanoEngine VERSION 0.1.0 LANGUAGES C CXX)
+# ==============================================================================
+# Project Setup
+# ==============================================================================
+project(NanoEngine
+    VERSION 0.1.0
+    DESCRIPTION "Modern C++20 3D Rendering Engine with Vulkan & OpenGL"
+    LANGUAGES C CXX
+)
 
-
-
-# Exiger la norme C++20 pour tout le projet
+# Enforce C++20 standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Exportation des commandes de compilation (utile pour le protocole LSP / intellisense dans VS Code)
+# Export compilation database for LSP / IDE IntelliSense
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Inclusion du module FetchContent natif de CMake
+# Enable FetchContent module
 include(FetchContent)
 
 # ==============================================================================
-# 1. GLFW (Gestion de fenêtre et événements)
+# System Dependencies
 # ==============================================================================
-message(STATUS "Fetching GLFW...")
+
+# Vulkan SDK
+message(STATUS "[NanoEngine] Searching for Vulkan SDK...")
+find_package(Vulkan REQUIRED)
+
+find_library(SHADERC_LIB NAMES shaderc_shared shaderc_combined HINTS $ENV{VULKAN_SDK}/lib)
+if(SHADERC_LIB)
+    message(STATUS "[NanoEngine] Found shaderc library: ${SHADERC_LIB}")
+    add_library(shaderc INTERFACE)
+    target_link_libraries(shaderc INTERFACE "${SHADERC_LIB}")
+    target_include_directories(shaderc INTERFACE "${Vulkan_INCLUDE_DIR}")
+endif()
+
+# Optional GLSL shader compiler (glslc)
+find_program(GLSLC_EXECUTABLE NAMES glslc HINTS ${Vulkan_GLSLC_EXECUTABLE} $ENV{VULKAN_SDK}/bin)
+if(GLSLC_EXECUTABLE)
+    message(STATUS "[NanoEngine] Found Vulkan GLSL compiler (glslc): ${GLSLC_EXECUTABLE}")
+endif()
+
+# ==============================================================================
+# External Libraries (FetchContent)
+# ==============================================================================
+
+# 1. GLFW (Windowing & Input)
+message(STATUS "[NanoEngine] Fetching GLFW 3.4...")
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+
 FetchContent_Declare(
     glfw
     GIT_REPOSITORY https://github.com/glfw/glfw.git
     GIT_TAG        3.4
 )
-# Désactivation des options inutiles de GLFW pour accélérer la compilation
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
-# ==============================================================================
-# 2. GLM (Mathématiques 3D)
-# ==============================================================================
-message(STATUS "Fetching GLM...")
+# 2. GLM (OpenGL Mathematics)
+message(STATUS "[NanoEngine] Fetching GLM 1.0.1...")
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -44,54 +70,39 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
-# ==============================================================================
-# 3. glad (OpenGL Loader - GLAD 1 C generator)
-# ==============================================================================
-message(STATUS "Fetching GLAD...")
+# 3. GLAD (OpenGL Loader Generator)
+message(STATUS "[NanoEngine] Fetching GLAD...")
+set(GLAD_PROFILE "core" CACHE STRING "" FORCE)
+set(GLAD_ALL_EXTENSIONS ON CACHE BOOL "" FORCE)
+
 FetchContent_Declare(
     glad
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
     GIT_TAG        v0.1.36
 )
-# Configuration de GLAD pour OpenGL 4.5 Core Profile
-set(GLAD_PROFILE "core" CACHE STRING "" FORCE)
-set(GLAD_ALL_EXTENSIONS ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glad)
 
-
-# ==============================================================================
-# 4. stb (Chargement d'images - stb_image)
-# ==============================================================================
-message(STATUS "Fetching stb...")
+# 4. stb (Header-only Image Loading)
+message(STATUS "[NanoEngine] Fetching stb...")
 FetchContent_Declare(
     stb
     GIT_REPOSITORY https://github.com/nothings/stb.git
     GIT_TAG        master
 )
-FetchContent_GetProperties(stb)
-if(NOT stb_POPULATED)
-    FetchContent_Populate(stb)
-endif()
+FetchContent_MakeAvailable(stb)
 
-# Création d'une cible interface pour stb_image car le dépôt est header-only
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
-# ==============================================================================
-# 5. Dear ImGui (Interface utilisateur / Debug UI)
-# ==============================================================================
-message(STATUS "Fetching Dear ImGui...")
+# 5. Dear ImGui (UI & Debug Overlay)
+message(STATUS "[NanoEngine] Fetching Dear ImGui v1.91.8...")
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
     GIT_TAG        v1.91.8
 )
-FetchContent_GetProperties(imgui)
-if(NOT imgui_POPULATED)
-    FetchContent_Populate(imgui)
-endif()
+FetchContent_MakeAvailable(imgui)
 
-# Configuration de la bibliothèque ImGui avec les backends GLFW + OpenGL3
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -99,18 +110,16 @@ add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
 )
 target_include_directories(imgui PUBLIC
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
 )
-# ImGui a besoin de connaître l'API de fenêtrage et le loader OpenGL
-target_link_libraries(imgui PUBLIC glfw glad)
+target_link_libraries(imgui PUBLIC glfw glad Vulkan::Vulkan)
 
-# ==============================================================================
-# 6. spdlog (Système de Logs)
-# ==============================================================================
-message(STATUS "Fetching spdlog...")
+# 6. spdlog (Fast C++ Logging Library)
+message(STATUS "[NanoEngine] Fetching spdlog v1.14.1...")
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
@@ -118,16 +127,41 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+# 7. vk-bootstrap
+message(STATUS "[NanoEngine] Fetching ck-bootstrap v1.3.296...")
+FetchContent_Declare(
+    vk-bootstrap
+    GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap.git
+    GIT_TAG        v1.3.296 # ou version récente
+)
+FetchContent_MakeAvailable(vk-bootstrap)
+
 # ==============================================================================
-# Configuration de l'Exécutable du Moteur 3D
+# Executable & Build Target
 # ==============================================================================
 
-# Fichiers sources de votre projet
-file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.h")
+# Collect engine source and header files
+file(GLOB_RECURSE ENGINE_SOURCES "src/*.cpp" "src/*.h")
 
-add_executable(NanoEngine main.cpp ${SOURCES})
+# Define target executable
+add_executable(NanoEngine
+    main.cpp
+    ${ENGINE_SOURCES}
+)
 
-# Association des bibliothèques externes à votre exécutable
+# Target include directories
+target_include_directories(NanoEngine PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+# Target compiler options
+if(MSVC)
+    target_compile_options(NanoEngine PRIVATE /W4 /utf-8)
+else()
+    target_compile_options(NanoEngine PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# Target linked libraries
 target_link_libraries(NanoEngine PRIVATE
     glfw
     glad
@@ -135,20 +169,13 @@ target_link_libraries(NanoEngine PRIVATE
     stb
     imgui
     spdlog::spdlog
+    Vulkan::Vulkan
+    shaderc
+    vk-bootstrap::vk-bootstrap
 )
 
+
+# Platform-specific dependencies
 if(WIN32)
     target_link_libraries(NanoEngine PRIVATE opengl32)
-endif()
-
-# Dossiers d'en-tête de votre projet
-target_include_directories(NanoEngine PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-# Définition des options du compilateur (Warning levels)
-if(MSVC)
-    target_compile_options(NanoEngine PRIVATE /W4 /utf-8)
-else()
-    target_compile_options(NanoEngine PRIVATE -Wall -Wextra -Wpedantic)
 endif()
