@@ -20,6 +20,8 @@ public:
     void clear() override;
     void draw(std::shared_ptr<Pipeline> pipeline) override;
 
+    std::shared_ptr<Shader> createShader(ShaderType type, std::string source) override;
+
     std::shared_ptr<Buffer> createBuffer(float vertices[], size_t size) override;
     void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
 

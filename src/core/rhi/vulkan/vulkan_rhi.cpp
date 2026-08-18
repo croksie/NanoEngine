@@ -283,6 +283,10 @@ void VulkanRHI::draw(std::shared_ptr<Pipeline> pipeline) {
     vkCmdDraw(m_cmdBuffers[m_currentFrame], vulkanPipeline->getBindedNumberOfVerticles(), 1, 0, 0);
 }
 
+std::shared_ptr<Shader> VulkanRHI::createShader(ShaderType type, std::string source) {
+    return std::make_shared<VulkanShader>(m_ctx.device, type, source);
+}
+
 std::shared_ptr<Buffer> VulkanRHI::createBuffer(float vertices[], size_t size) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating buffer...");
     return std::make_shared<VulkanBuffer>(size, vertices, m_ctx);

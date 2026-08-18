@@ -18,6 +18,8 @@ public:
     virtual void clear() = 0;
     virtual void draw(std::shared_ptr<Pipeline> pipeline) = 0;
 
+    virtual std::shared_ptr<Shader> createShader(ShaderType type, std::string source) = 0;
+
     virtual std::shared_ptr<Buffer> createBuffer(float vertices[], size_t size) = 0;
     virtual void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) = 0;
 

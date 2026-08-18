@@ -54,14 +54,13 @@ public:
     void clear() override;
     void draw(std::shared_ptr<Pipeline> pipeline) override;
 
+    std::shared_ptr<Shader> createShader(ShaderType type, std::string source) override;
+
     std::shared_ptr<Buffer> createBuffer(float vertices[], size_t size) override;
     void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
 
     std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) override;
     void bindPipeline(Pipeline* pipeline) override;
-
-    VkDevice getDevice() { return m_ctx.device; } //To suppress, it's disgusting
-    // Use to create shader in renderer.cpp. Maybe create an abstraction in rhi.h to create shader
 
 
 private:

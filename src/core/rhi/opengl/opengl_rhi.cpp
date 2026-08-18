@@ -22,7 +22,10 @@ void OpenGLRHI::initialize(Window* window)
     ENGINE_LOG_INFO("OpenGL Context Initialized: {}", (const char*)glGetString(GL_VERSION));
 
     glViewport(0, 0, 1280, 720);
-   
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+
 }
 
 
@@ -33,15 +36,15 @@ void OpenGLRHI::beginFrame() {
 
 /// @brief Swap buffers
 void OpenGLRHI::endFrame() {
-     glfwSwapBuffers(static_cast<GLFWwindow*>(m_window->getNativeHandle()));
-     glfwPollEvents();
-     ENGINE_LOG_TRACE("OpenGLRHI::Buffer swaped");
+    glfwSwapBuffers(static_cast<GLFWwindow*>(m_window->getNativeHandle()));
+    glfwPollEvents();
+    ENGINE_LOG_TRACE("OpenGLRHI::Buffer swaped");
 }
 
 /// @brief Fill the buffer with 0.0f 0.0f 0.0f
 void OpenGLRHI::clear() {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     ENGINE_LOG_TRACE("OpenGLRHI::Buffer cleared");
 }
 
@@ -75,6 +78,10 @@ void OpenGLRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared
 }
 
 /******** PIPELINE/SHADER ********/
+
+std::shared_ptr<Shader> OpenGLRHI::createShader(ShaderType type, std::string source) {
+    return std::make_shared<OpenGLShader>(type, source);
+}
 
 /// @brief Create a VAO
 /// @return An abstarct class Pipeline who contains an OpenGl Array object
