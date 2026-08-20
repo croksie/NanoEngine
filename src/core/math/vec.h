@@ -1,4 +1,5 @@
 #pragma once
+#include <glm/glm.hpp>
 
 struct Vec2
 {
@@ -58,6 +59,10 @@ struct Vec3
         y -= other.y;
         z -= other.z;
         return *this;
+    }
+
+    operator glm::vec3() const {
+        return glm::vec3(x, y, z);
     }
 };
 
