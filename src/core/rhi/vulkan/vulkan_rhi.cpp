@@ -17,8 +17,8 @@ void VulkanRHI::initialize(Window *window) {
     vkb::InstanceBuilder instBuilder;
     auto instResult = instBuilder
         .set_app_name("NanoEngine")
-        .request_validation_layers(true)
-        .use_default_debug_messenger()
+        //.request_validation_layers(true)
+        //.use_default_debug_messenger()
         .require_api_version(1, 3, 0) // Force Vulkan 1.3 in order to use Dynamic Rendering
         .build();
 
@@ -104,11 +104,71 @@ void VulkanRHI::initialize(Window *window) {
 
         if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             m_ctx.depthFormat = format;
+            break;
         }
     }
     if(m_ctx.depthFormat == VK_FORMAT_UNDEFINED ) {
         ENGINE_LOG_CRITICAL("VulkanRHI::No compatible depth format found");
         throw std::runtime_error("No compatible depth format found");
+    }
+
+    // Create Depth Images & Views (one per frame in flight)
+    ENGINE_LOG_TRACE("VulkanRHI::Creating depth resources...");
+    m_ctx.depthImages.resize(MAX_FRAMES_IN_FLIGHT);
+    m_ctx.depthImageMemories.resize(MAX_FRAMES_IN_FLIGHT);
+    m_ctx.depthImageViews.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkImageCreateInfo depthImageInfo{};
+        depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
+        depthImageInfo.extent.width = static_cast<uint32_t>(width);
+        depthImageInfo.extent.height = static_cast<uint32_t>(height);
+        depthImageInfo.extent.depth = 1;
+        depthImageInfo.mipLevels = 1;
+        depthImageInfo.arrayLayers = 1;
+        depthImageInfo.format = m_ctx.depthFormat;
+        depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        depthImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateImage(m_ctx.device, &depthImageInfo, nullptr, &m_ctx.depthImages[i]) != VK_SUCCESS) {
+            ENGINE_LOG_CRITICAL("VulkanRHI::Failed to create depth image!");
+            throw std::runtime_error("Failed to create depth image!");
+        }
+
+        VkMemoryRequirements depthMemReqs;
+        vkGetImageMemoryRequirements(m_ctx.device, m_ctx.depthImages[i], &depthMemReqs);
+
+        VkMemoryAllocateInfo depthAllocInfo{};
+        depthAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        depthAllocInfo.allocationSize = depthMemReqs.size;
+        depthAllocInfo.memoryTypeIndex = findMemoryType(depthMemReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        if (vkAllocateMemory(m_ctx.device, &depthAllocInfo, nullptr, &m_ctx.depthImageMemories[i]) != VK_SUCCESS) {
+            ENGINE_LOG_CRITICAL("VulkanRHI::Failed to allocate depth image memory!");
+            throw std::runtime_error("Failed to allocate depth image memory!");
+        }
+
+        vkBindImageMemory(m_ctx.device, m_ctx.depthImages[i], m_ctx.depthImageMemories[i], 0);
+
+        VkImageViewCreateInfo depthViewInfo{};
+        depthViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        depthViewInfo.image = m_ctx.depthImages[i];
+        depthViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        depthViewInfo.format = m_ctx.depthFormat;
+        depthViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthViewInfo.subresourceRange.baseMipLevel = 0;
+        depthViewInfo.subresourceRange.levelCount = 1;
+        depthViewInfo.subresourceRange.baseArrayLayer = 0;
+        depthViewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(m_ctx.device, &depthViewInfo, nullptr, &m_ctx.depthImageViews[i]) != VK_SUCCESS) {
+            ENGINE_LOG_CRITICAL("VulkanRHI::Failed to create depth image view!");
+            throw std::runtime_error("Failed to create depth image view!");
+        }
     }
 
     // Create Fence and semaphore
@@ -246,6 +306,20 @@ void VulkanRHI::shutdown() {
         vkDestroyImageView(m_ctx.device, view, nullptr);
     }
     vkDestroySwapchainKHR(m_ctx.device, m_ctx.swapchain, nullptr);
+    for (size_t i = 0; i < m_ctx.depthImageViews.size(); i++) {
+        if (m_ctx.depthImageViews[i] != VK_NULL_HANDLE) {
+            vkDestroyImageView(m_ctx.device, m_ctx.depthImageViews[i], nullptr);
+        }
+        if (m_ctx.depthImages[i] != VK_NULL_HANDLE) {
+            vkDestroyImage(m_ctx.device, m_ctx.depthImages[i], nullptr);
+        }
+        if (m_ctx.depthImageMemories[i] != VK_NULL_HANDLE) {
+            vkFreeMemory(m_ctx.device, m_ctx.depthImageMemories[i], nullptr);
+        }
+    }
+    m_ctx.depthImageViews.clear();
+    m_ctx.depthImages.clear();
+    m_ctx.depthImageMemories.clear();
     vkDestroyDevice(m_ctx.device, nullptr);
     vkDestroySurfaceKHR(m_ctx.instance, m_ctx.surface, nullptr);
     vkb::destroy_debug_utils_messenger(m_ctx.instance, m_ctx.debugMessenger);
@@ -279,7 +353,20 @@ void VulkanRHI::beginFrame() {
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         0,
         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT
+        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+        VK_IMAGE_ASPECT_COLOR_BIT
+    );
+
+    transitionImageLayout(
+        m_cmdBuffers[m_currentFrame],
+        m_ctx.depthImages[m_currentFrame],
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+        0,
+        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+        VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        VK_IMAGE_ASPECT_DEPTH_BIT
     );
 
     VkRenderingAttachmentInfo colorAttachment{};
@@ -290,12 +377,21 @@ void VulkanRHI::beginFrame() {
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.clearValue.color = { { 0.1f, 0.1f, 0.12f, 1.0f } };
 
+    VkRenderingAttachmentInfo depthAttachment{};
+    depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    depthAttachment.imageView = m_ctx.depthImageViews[m_currentFrame];
+    depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.clearValue.depthStencil = { 1.0f, 0 };
+
     VkRenderingInfo renderingInfo{};
     renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
     renderingInfo.renderArea = { {0, 0}, {WIDTH, HEIGHT} };
     renderingInfo.layerCount = 1;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachment;
+    renderingInfo.pDepthAttachment = &depthAttachment;
 
     vkCmdBeginRendering(m_cmdBuffers[m_currentFrame], &renderingInfo);
 
@@ -424,7 +520,19 @@ void VulkanRHI::setLocalUniform(const void* data, size_t size) {
 
 
 /******** Utility ********/
-void VulkanRHI::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess) {
+uint32_t VulkanRHI::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(m_ctx.physicalDevice, &memProperties);
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    ENGINE_LOG_CRITICAL("VulkanRHI::Failed to find suitable memory type");
+    throw std::runtime_error("Failed to find suitable memory type");
+}
+
+void VulkanRHI::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess, VkImageAspectFlags aspectMask) {
     VkImageMemoryBarrier2 barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
     barrier.srcStageMask = srcStage;
@@ -434,7 +542,7 @@ void VulkanRHI::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImag
     barrier.oldLayout = oldLayout;
     barrier.newLayout = newLayout;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.aspectMask = aspectMask;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = 1;
     barrier.subresourceRange.baseArrayLayer = 0;

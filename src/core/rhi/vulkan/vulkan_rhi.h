@@ -19,8 +19,8 @@ class VulkanPipeline;
 class VulkanBuffer;
 
 
-const uint32_t WIDTH = 640;
-const uint32_t HEIGHT = 480;
+const uint32_t WIDTH = 1280;
+const uint32_t HEIGHT = 720;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 3;
 
@@ -41,9 +41,12 @@ struct VulkanContext {
     VkQueue presentQueue;
     VkSwapchainKHR swapchain;
     VkFormat swapchainFormat;
-    VkFormat depthFormat;
+    VkFormat depthFormat = VK_FORMAT_UNDEFINED;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkImage> depthImages;
+    std::vector<VkDeviceMemory> depthImageMemories;
+    std::vector<VkImageView> depthImageViews;
 };
 
 
@@ -87,6 +90,6 @@ private:
     VulkanPipeline* m_currentPipeline = nullptr;
     std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffer;
 
-
-    void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess);
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 };

@@ -33,4 +33,5 @@ private :
     VkBuffer m_buffer = VK_NULL_HANDLE;
     VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;
     size_t m_size = 0;
+    void* m_bufferData = nullptr;
 };

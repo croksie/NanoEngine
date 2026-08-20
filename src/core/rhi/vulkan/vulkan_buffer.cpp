@@ -37,22 +37,23 @@ VulkanBuffer::VulkanBuffer(size_t size, const void* data, const VulkanContext& c
         throw std::runtime_error("Failed to bind buffer memory");
     }
 
+    result = vkMapMemory(m_ctx.device, m_bufferMemory, 0, size, 0, &m_bufferData);
+    if (result != VK_SUCCESS) {
+        ENGINE_LOG_CRITICAL("VulkanBuffer::Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
+        throw std::runtime_error("Failed to map memory");
+    }
+    
     // Copy data to buffer if data is provided
     if (data != nullptr) {
-        void* buffer_data;
-        result = vkMapMemory(m_ctx.device, m_bufferMemory, 0, size, 0, &buffer_data);
-        if (result != VK_SUCCESS) {
-            ENGINE_LOG_CRITICAL("VulkanBuffer::Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
-            throw std::runtime_error("Failed to map memory");
-        }
-        memcpy(buffer_data, data, (size_t) bufferInfo.size);
-        vkUnmapMemory(ctx.device, m_bufferMemory);
+        memcpy(m_bufferData, data, (size_t) bufferInfo.size);
+        //vkUnmapMemory(ctx.device, m_bufferMemory);
     }
 }
 
 VulkanBuffer::~VulkanBuffer() {
     if (m_buffer != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(m_ctx.device);
+        vkUnmapMemory(m_ctx.device, m_bufferMemory);
         vkDestroyBuffer(m_ctx.device, m_buffer, nullptr);
         vkFreeMemory(m_ctx.device, m_bufferMemory, nullptr);
     }
@@ -63,14 +64,14 @@ void VulkanBuffer::setData(size_t size, const void *data, size_t offset) {
         ENGINE_LOG_ERROR("VulkanRHI::Buffer overflow, data was not set.");
         return;
     }
-    void* buffer_data;
-    VkResult result = vkMapMemory(m_ctx.device, m_bufferMemory, offset, size, 0, &buffer_data); 
-    if(result != VK_SUCCESS) {
-        ENGINE_LOG_CRITICAL("VulkanBuffer::Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to map memory");
-    }
-    memcpy(buffer_data, data, (size_t) size);
-    vkUnmapMemory(m_ctx.device, m_bufferMemory);
+    //void* buffer_data;
+    // VkResult result = vkMapMemory(m_ctx.device, m_bufferMemory, offset, size, 0, &buffer_data); 
+    // if(result != VK_SUCCESS) {
+    //     ENGINE_LOG_CRITICAL("VulkanBuffer::Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
+    //     throw std::runtime_error("Failed to map memory");
+    // }
+    memcpy(m_bufferData, data, (size_t) size);
+    //vkUnmapMemory(m_ctx.device, m_bufferMemory);
 }
 
 uint32_t VulkanBuffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, const VulkanContext& ctx) {
