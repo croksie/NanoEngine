@@ -1,10 +1,10 @@
 #include "opengl_buffer.h"
 
 
+
 OpenGLBuffer::OpenGLBuffer(size_t size, const void* data) : m_size(size) {
     glCreateBuffers(1, &m_bufferID);
     glNamedBufferStorage(m_bufferID, size, data, GL_DYNAMIC_STORAGE_BIT);
-
 }
 
 OpenGLBuffer::~OpenGLBuffer() {

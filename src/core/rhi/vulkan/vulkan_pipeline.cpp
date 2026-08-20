@@ -1,22 +1,10 @@
 #include "core/rhi/vulkan/vulkan_pipeline.h"
 
-#include <utils/log.h>
+#include "utils/log.h"
 
-VulkanPipeline::VulkanPipeline(PipelineInfo& info, VulkanContext& ctx) : m_ctx(&ctx) {
+VulkanPipeline::VulkanPipeline(PipelineInfo& info, VulkanContext& ctx, VkPipelineLayout pipelineLayout) : m_ctx(&ctx), m_pipelineLayout(pipelineLayout) {
 
-    // Create Pipeline Layout
-    VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(glm::mat4); // TODO : Maybe use an abstraction
-
-    VkPipelineLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutInfo.pushConstantRangeCount = 1;
-    layoutInfo.pPushConstantRanges = &pushConstantRange;
-
-    vkCreatePipelineLayout(m_ctx->device, &layoutInfo, nullptr, &m_pipelineLayout);
-
+    
     // Shaders
     auto vertShader = std::static_pointer_cast<VulkanShader>(info.vertexShader);
     auto fragShader = std::static_pointer_cast<VulkanShader>(info.fragmentShader);
@@ -131,10 +119,10 @@ VulkanPipeline::VulkanPipeline(PipelineInfo& info, VulkanContext& ctx) : m_ctx(&
 
     ENGINE_LOG_TRACE("VulkanPipeline::Creating pipeline...");
     VkResult result = vkCreateGraphicsPipelines(ctx.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_pipeline);
-    if (result != VK_SUCCESS) {
-        ENGINE_LOG_ERROR("vkCreateGraphicsPipelines failed with error: {}", static_cast<int>(result));
-    }
-    ENGINE_LOG_TRACE("VulkanPipeline::Pipeline created");
+    if (result != VK_SUCCESS)
+        ENGINE_LOG_ERROR("VulkanPipeline::vkCreateGraphicsPipelines failed with error: {}", static_cast<int>(result));
+    else
+        ENGINE_LOG_TRACE("VulkanPipeline::Pipeline created");
 }
 
 
@@ -143,7 +131,6 @@ VulkanPipeline::VulkanPipeline(PipelineInfo& info, VulkanContext& ctx) : m_ctx(&
 VulkanPipeline::~VulkanPipeline() {
     vkDeviceWaitIdle(m_ctx->device);
     vkDestroyPipeline(m_ctx->device, m_pipeline, nullptr);
-    vkDestroyPipelineLayout(m_ctx->device, m_pipelineLayout, nullptr);
 }
 
 void VulkanPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) {

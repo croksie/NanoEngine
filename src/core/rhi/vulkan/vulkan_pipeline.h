@@ -1,5 +1,4 @@
 #pragma once
-
 #include "core/rhi/vulkan/vulkan_rhi.h"
 #include "core/rhi/rhi_pipeline.h"
 #include "core/rhi/vulkan/vulkan_shader.h"
@@ -16,7 +15,7 @@ constexpr int VERTICLE_SIZE = 6 * sizeof(float);
 class VulkanPipeline : public Pipeline {
 public:
     VulkanPipeline() = delete;
-    VulkanPipeline(PipelineInfo& info, VulkanContext& ctx);
+    VulkanPipeline(PipelineInfo& info, VulkanContext& ctx, VkPipelineLayout pipelineLayout);
     ~VulkanPipeline();
 
     /// @brief Set the commandBuffer to send command for bindVertexBuffer()

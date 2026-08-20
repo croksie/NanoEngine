@@ -28,6 +28,11 @@ public:
     std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) override;
     void bindPipeline(Pipeline* pipeline) override;
 
+    void setGlobalUniform(const void* data, size_t size) override;
+    void setLocalUniform(const void* data, size_t size) override;
+
 private:
     Window* m_window = nullptr;
+
+    std::unique_ptr<OpenGLBuffer> m_uniformBuffer;
 };

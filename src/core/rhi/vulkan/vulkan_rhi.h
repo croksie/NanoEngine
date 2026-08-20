@@ -13,6 +13,10 @@
 #include <array>
 #include <iostream>
 #include <memory>
+#include <string>
+
+class VulkanPipeline;
+class VulkanBuffer;
 
 
 const uint32_t WIDTH = 640;
@@ -62,6 +66,9 @@ public:
     std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) override;
     void bindPipeline(Pipeline* pipeline) override;
 
+    void setGlobalUniform(const void* data, size_t size) override;
+    void setLocalUniform(const void* data, size_t size) override;
+
 
 private:
     Window* m_window = nullptr;
@@ -72,6 +79,13 @@ private:
     std::vector<FrameSyncObjects> m_syncObjects{MAX_FRAMES_IN_FLIGHT};
     uint32_t m_currentFrame = 0;
     uint32_t m_imageIndex = 0;
+
+    VkDescriptorPool m_descriptorPool;
+    VkDescriptorSetLayout m_descriptorSetLayout;
+    std::vector<VkDescriptorSet> m_descriptorSets{MAX_FRAMES_IN_FLIGHT};
+    VkPipelineLayout m_pipelineLayout;
+    VulkanPipeline* m_currentPipeline = nullptr;
+    std::vector<std::unique_ptr<VulkanBuffer>> m_uniformBuffer;
 
 
     void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess);

@@ -5,7 +5,10 @@
 #include "core/rhi/rhi_shader.h"
 
 
+#include <stddef.h>
+
 #include <memory>
+
 
 class RHI{
 
@@ -25,6 +28,9 @@ public:
 
     virtual std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) = 0;
     virtual void bindPipeline(Pipeline* pipeline) = 0;
+
+    virtual void setGlobalUniform(const void* data, size_t size) = 0;
+    virtual void setLocalUniform(const void* data, size_t size) = 0;
 
     virtual void initialize(Window* window) = 0;
     virtual void shutdown() = 0;

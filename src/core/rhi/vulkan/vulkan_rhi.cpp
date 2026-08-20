@@ -12,7 +12,7 @@ void VulkanRHI::initialize(Window *window) {
 
     m_window->initializeWindow(WIDTH, HEIGHT, "NanoEngine");
 
-
+    ENGINE_LOG_TRACE("VulkanRHI::Creating instance...");
     // Use vkboostrap to initialize vulkan
     vkb::InstanceBuilder instBuilder;
     auto instResult = instBuilder
@@ -38,6 +38,7 @@ void VulkanRHI::initialize(Window *window) {
     features13.dynamicRendering = VK_TRUE;    // Suppress RenderPass / Framebuffers
     features13.synchronization2 = VK_TRUE;    // Simplified Sync
 
+    ENGINE_LOG_TRACE("VulkanRHI::Choosing physical device...");
     // Select Physical Device
     vkb::PhysicalDeviceSelector selector{ vkbInst };
     auto physResult = selector
@@ -54,6 +55,7 @@ void VulkanRHI::initialize(Window *window) {
     m_ctx.physicalDevice = vkbPhysDevice.physical_device;
     // TODO : Add the possibility to choose the device if multiple device detected
 
+    ENGINE_LOG_TRACE("VulkanRHI::Creating logical device and queue...");
     // Create logical device and queue
     vkb::DeviceBuilder devBuilder{ vkbPhysDevice };
     auto devResult = devBuilder.build();
@@ -70,10 +72,11 @@ void VulkanRHI::initialize(Window *window) {
     int width, height;
     glfwGetFramebufferSize(static_cast<GLFWwindow*>(m_window->getNativeHandle()), &width, &height);
 
+    ENGINE_LOG_TRACE("VulkanRHI::Creating swapchain...");
     vkb::SwapchainBuilder scBuilder{ vkbDevice };
     auto scResult = scBuilder
         .set_desired_extent(width, height)
-        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR) // V-Sync Enable
+        .set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR) // V-Sync Enable    VK_PRESENT_MODE_IMMEDIATE_KHR to unlimited
         // TODO : Add the possibility to change present mode at runtime or make an artificial v-sync
         .build();
 
@@ -88,6 +91,7 @@ void VulkanRHI::initialize(Window *window) {
     m_ctx.swapchainImageViews = vkbSwapchain.get_image_views().value();
 
     // DepthFormat
+    ENGINE_LOG_TRACE("VulkanRHI::Checking depth format...");
     std::vector<VkFormat> candidates = {
         VK_FORMAT_D32_SFLOAT,
         VK_FORMAT_D32_SFLOAT_S8_UINT,
@@ -108,6 +112,7 @@ void VulkanRHI::initialize(Window *window) {
     }
 
     // Create Fence and semaphore
+    ENGINE_LOG_TRACE("VulkanRHI::Creating fence and semaphore...");
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -122,6 +127,7 @@ void VulkanRHI::initialize(Window *window) {
     }
 
     // Create Command Pool and Command Buffer
+    ENGINE_LOG_TRACE("VulkanRHI::Creating command pool and command buffer...");
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -137,17 +143,104 @@ void VulkanRHI::initialize(Window *window) {
 
     vkAllocateCommandBuffers(m_ctx.device, &allocInfo, m_cmdBuffers.data());
 
+    // Create uniform buffer
+    ENGINE_LOG_TRACE("VulkanRHI::Creating uniform buffer...");
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        m_uniformBuffer.emplace_back(std::make_unique<VulkanBuffer>(2048, nullptr, m_ctx, VulkanBufferType::UNIFORM)); // FIXME Change the buffer size
+    }
+
+    // Create Descriptor Set Layout
+    ENGINE_LOG_TRACE("VulkanRHI::Creating descriptor set layout...");
+    VkDescriptorSetLayoutBinding globalLayoutBinding{};
+    globalLayoutBinding.binding = 0;
+    globalLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    globalLayoutBinding.descriptorCount = 1;
+    globalLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // Accessible dans le vertex shader
+    globalLayoutBinding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
+    descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorLayoutInfo.bindingCount = 1;
+    descriptorLayoutInfo.pBindings = &globalLayoutBinding;
+
+    vkCreateDescriptorSetLayout(m_ctx.device, &descriptorLayoutInfo, nullptr, &m_descriptorSetLayout);
+
+    // Create Descriptor Pool
+    ENGINE_LOG_TRACE("VulkanRHI::Creating descriptor pool...");
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VkDescriptorPoolCreateInfo descriptorPoolInfo{};
+    descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolInfo.poolSizeCount = 1;
+    descriptorPoolInfo.pPoolSizes = &poolSize;
+    descriptorPoolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    vkCreateDescriptorPool(m_ctx.device, &descriptorPoolInfo, nullptr, &m_descriptorPool);
+
+    // Allocate Descriptor Sets
+    ENGINE_LOG_TRACE("VulkanRHI::Allocating descriptor sets...");
+    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, m_descriptorSetLayout);
+
+    VkDescriptorSetAllocateInfo descriptorAllocInfo{};
+    descriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorAllocInfo.descriptorPool = m_descriptorPool;
+    descriptorAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    descriptorAllocInfo.pSetLayouts = layouts.data();
+
+    vkAllocateDescriptorSets(m_ctx.device, &descriptorAllocInfo, m_descriptorSets.data());
+
+    // Write Descriptor Sets
+    ENGINE_LOG_TRACE("VulkanRHI::Writing descriptor sets...");
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = *m_uniformBuffer[i]->getBufferHandle();
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE;
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_descriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(m_ctx.device, 1, &descriptorWrite, 0, nullptr);
+    }
+
+    // Create Pipeline Layout
+    ENGINE_LOG_TRACE("VulkanRHI::Creating pipeline layout...");
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(glm::mat4); // TODO : Maybe use an abstraction
+
+    VkPipelineLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layoutInfo.setLayoutCount = 1;
+    layoutInfo.pSetLayouts = &m_descriptorSetLayout;
+    layoutInfo.pushConstantRangeCount = 1;
+    layoutInfo.pPushConstantRanges = &pushConstantRange;
+
+    vkCreatePipelineLayout(m_ctx.device, &layoutInfo, nullptr, &m_pipelineLayout);
+
+    ENGINE_LOG_INFO("VulkanRHI::Initialization success");
 }
-
-
 
 void VulkanRHI::shutdown() {
     vkDeviceWaitIdle(m_ctx.device);
+    m_uniformBuffer.clear(); // Destroy uniform buffers before device
     for (auto& sync : m_syncObjects) {
         vkDestroySemaphore(m_ctx.device, sync.imageAvailableSemaphore, nullptr);
         vkDestroySemaphore(m_ctx.device, sync.renderFinishedSemaphore, nullptr);
         vkDestroyFence(m_ctx.device, sync.inFlightFence, nullptr);
     }
+    vkDestroyPipelineLayout(m_ctx.device, m_pipelineLayout, nullptr);
+    vkDestroyDescriptorPool(m_ctx.device, m_descriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(m_ctx.device, m_descriptorSetLayout, nullptr);
     vkDestroyCommandPool(m_ctx.device, m_cmdPool, nullptr);
     for (auto view : m_ctx.swapchainImageViews) {
         vkDestroyImageView(m_ctx.device, view, nullptr);
@@ -165,7 +258,7 @@ void VulkanRHI::beginFrame() {
     auto& sync = m_syncObjects[m_currentFrame];
     // Wait fot gpu
     vkWaitForFences(m_ctx.device, 1, &sync.inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(m_ctx.device, 1, &sync.inFlightFence); // On la remet à zéro
+    vkResetFences(m_ctx.device, 1, &sync.inFlightFence);
 
     // Get image form swapchain
     vkAcquireNextImageKHR(m_ctx.device, m_ctx.swapchain, UINT64_MAX, sync.imageAvailableSemaphore, VK_NULL_HANDLE, &m_imageIndex);
@@ -277,19 +370,18 @@ void VulkanRHI::clear() {
 
 }
 
+
+/******** Draw ********/
 void VulkanRHI::draw(std::shared_ptr<Pipeline> pipeline) {
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
     //vkCmdDrawIndexed(m_cmdBuffer, vulkanPipeline->getBindedNumberOfVerticles(), 1, 0, 0, 0);
     vkCmdDraw(m_cmdBuffers[m_currentFrame], vulkanPipeline->getBindedNumberOfVerticles(), 1, 0, 0);
 }
 
-std::shared_ptr<Shader> VulkanRHI::createShader(ShaderType type, std::string source) {
-    return std::make_shared<VulkanShader>(m_ctx.device, type, source);
-}
-
+/******** Buffer ********/
 std::shared_ptr<Buffer> VulkanRHI::createBuffer(float vertices[], size_t size) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating buffer...");
-    return std::make_shared<VulkanBuffer>(size, vertices, m_ctx);
+    return std::make_shared<VulkanBuffer>(size, vertices, m_ctx, VulkanBufferType::VERTEX);
 }
 
 void VulkanRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
@@ -298,24 +390,40 @@ void VulkanRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared
 
     vulkanPipeline->setCmdBuffer(m_cmdBuffers[m_currentFrame]);
     vulkanPipeline->bindVertexBuffer(buffer);
-
-    //vkCmdBindDescriptorSets()
 }
 
+/******** PIPELINE/SHADER ********/
 std::shared_ptr<Pipeline> VulkanRHI::createPipeline(PipelineInfo &info)
 {
     ENGINE_LOG_TRACE("VulkanRHI::Creating pipeline...");
-    return std::make_shared<VulkanPipeline>(info, m_ctx);
+    return std::make_shared<VulkanPipeline>(info, m_ctx, m_pipelineLayout);
 }
 
 void VulkanRHI::bindPipeline(Pipeline *pipeline) {
     ENGINE_LOG_TRACE("VulkanRHI::Binding pipeline...");
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline);
+    m_currentPipeline = vulkanPipeline;
     vkCmdBindPipeline(m_cmdBuffers[m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanPipeline->getPipeline());
+}
+
+std::shared_ptr<Shader> VulkanRHI::createShader(ShaderType type, std::string source) {
+    return std::make_shared<VulkanShader>(m_ctx.device, type, source);
+}
+
+/******** Unfiform ********/
+void VulkanRHI::setGlobalUniform(const void* data, size_t size) {
+    m_uniformBuffer[m_currentFrame]->setData(size, data, 0);
+    vkCmdBindDescriptorSets(m_cmdBuffers[m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_descriptorSets[m_currentFrame], 0, nullptr);
+}
+
+void VulkanRHI::setLocalUniform(const void* data, size_t size) {
+    vkCmdPushConstants(m_cmdBuffers[m_currentFrame], m_currentPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, (uint32_t)size, data);
 }
 
 
 
+
+/******** Utility ********/
 void VulkanRHI::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess) {
     VkImageMemoryBarrier2 barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;

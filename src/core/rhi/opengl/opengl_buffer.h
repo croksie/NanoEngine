@@ -6,6 +6,7 @@
 
 class OpenGLBuffer : public Buffer {
 public:
+    OpenGLBuffer() = delete;
     OpenGLBuffer(size_t size, const void* data);
     ~OpenGLBuffer() ;
 

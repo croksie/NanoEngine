@@ -1,14 +1,13 @@
 #include "core/rhi/vulkan/vulkan_buffer.h"
 
 #include "utils/log.h"
-#include "vulkan_buffer.h"
 
-// TODO : Handle memory allcoation error
-VulkanBuffer::VulkanBuffer(size_t size, const void* data, const VulkanContext& ctx) : m_ctx(ctx), m_size(size) {
+// TODO: Handle memory allcoation error
+VulkanBuffer::VulkanBuffer(size_t size, const void* data, const VulkanContext& ctx, VulkanBufferType type) : m_ctx(ctx), m_size(size), m_type(type) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.usage = static_cast<uint32_t>(type); // Get from VulkanBufferType Enum
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkResult result = vkCreateBuffer(m_ctx.device, &bufferInfo, nullptr, &m_buffer);
@@ -38,22 +37,25 @@ VulkanBuffer::VulkanBuffer(size_t size, const void* data, const VulkanContext& c
         throw std::runtime_error("Failed to bind buffer memory");
     }
 
-    // Copy data to buffer
-    void* buffer_data;
-    result = vkMapMemory(m_ctx.device, m_bufferMemory, 0, size, 0, &buffer_data) ;
-    if (result != VK_SUCCESS) {
-        ENGINE_LOG_CRITICAL("VulkanBuffer::Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to map memory");
+    // Copy data to buffer if data is provided
+    if (data != nullptr) {
+        void* buffer_data;
+        result = vkMapMemory(m_ctx.device, m_bufferMemory, 0, size, 0, &buffer_data);
+        if (result != VK_SUCCESS) {
+            ENGINE_LOG_CRITICAL("VulkanBuffer::Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
+            throw std::runtime_error("Failed to map memory");
+        }
+        memcpy(buffer_data, data, (size_t) bufferInfo.size);
+        vkUnmapMemory(ctx.device, m_bufferMemory);
     }
-    memcpy(buffer_data, data, (size_t) bufferInfo.size);
-    vkUnmapMemory(ctx.device, m_bufferMemory);
-
 }
 
 VulkanBuffer::~VulkanBuffer() {
-    vkDeviceWaitIdle(m_ctx.device);
-    vkDestroyBuffer(m_ctx.device, m_buffer, nullptr);
-    vkFreeMemory(m_ctx.device, m_bufferMemory, nullptr);
+    if (m_buffer != VK_NULL_HANDLE) {
+        vkDeviceWaitIdle(m_ctx.device);
+        vkDestroyBuffer(m_ctx.device, m_buffer, nullptr);
+        vkFreeMemory(m_ctx.device, m_bufferMemory, nullptr);
+    }
 }
 
 void VulkanBuffer::setData(size_t size, const void *data, size_t offset) {

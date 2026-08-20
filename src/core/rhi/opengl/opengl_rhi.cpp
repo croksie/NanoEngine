@@ -3,13 +3,16 @@
 #include "utils/log.h"
 #include "opengl_rhi.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 void OpenGLRHI::initialize(Window* window)
 {
     m_window = window;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 
     m_window->initializeWindow(1280, 720, "NanoEngine");
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(m_window->getNativeHandle()));
@@ -24,6 +27,8 @@ void OpenGLRHI::initialize(Window* window)
     glViewport(0, 0, 1280, 720);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
+    m_uniformBuffer = std::make_unique<OpenGLBuffer>(2000, nullptr); // FIXME Change the buffer size
 
 
 }
@@ -58,7 +63,6 @@ void OpenGLRHI::clear() {
 std::shared_ptr<Buffer> OpenGLRHI::createBuffer(float vertices[], size_t size) {
     ENGINE_LOG_TRACE("OpenGLRHI::Creating buffer...");
     return std::make_shared<OpenGLBuffer>(size, vertices);
-
 }
 
 /// @brief Bind a VBO to a VAO
@@ -102,6 +106,18 @@ void OpenGLRHI::bindPipeline(Pipeline* pipeline) {
     ENGINE_LOG_TRACE("OpenGLRHI::Pipeline binded");
 }
 
+/******** Uniforms ********/
+
+void OpenGLRHI::setGlobalUniform(const void *data, size_t size) {
+    m_uniformBuffer->setData(size, data, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_uniformBuffer->getBufferId());
+}
+
+void OpenGLRHI::setLocalUniform(const void *data, size_t size) {
+    glUniformMatrix4fv(0 , 1, GL_FALSE, reinterpret_cast<const GLfloat*>(data));
+}
+
+/******** Draw ********/
 
 void OpenGLRHI::draw(std::shared_ptr<Pipeline> pipeline) {
     ENGINE_LOG_TRACE("OpenGLRHI::Drawing...");
