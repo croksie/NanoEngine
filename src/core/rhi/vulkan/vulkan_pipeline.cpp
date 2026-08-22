@@ -1,8 +1,10 @@
 #include "core/rhi/vulkan/vulkan_pipeline.h"
+#include "core/rhi/vulkan/vulkan_initializer.h"
+#include "core/rhi/vulkan/vulkan_buffer.h"
 
 #include "utils/log.h"
 
-VulkanPipeline::VulkanPipeline(PipelineInfo& info, VulkanContext& ctx, VkPipelineLayout pipelineLayout) : m_ctx(&ctx), m_pipelineLayout(pipelineLayout) {
+VulkanPipeline::VulkanPipeline(PipelineInfo& info, vulkan::VulkanContext& ctx, VkPipelineLayout pipelineLayout) : m_ctx(&ctx), m_pipelineLayout(pipelineLayout) {
 
     
     // Shaders

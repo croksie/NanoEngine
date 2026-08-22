@@ -1,5 +1,4 @@
 #pragma once
-#include "core/rhi/vulkan/vulkan_rhi.h"
 #include "core/rhi/rhi_pipeline.h"
 #include "core/rhi/vulkan/vulkan_shader.h"
 
@@ -7,7 +6,9 @@
 
 #include <memory>
 
-struct VulkanContext;
+namespace vulkan {
+    struct VulkanContext;
+}
 
 constexpr int VERTICLE_SIZE = 6 * sizeof(float);
 
@@ -15,7 +16,7 @@ constexpr int VERTICLE_SIZE = 6 * sizeof(float);
 class VulkanPipeline : public Pipeline {
 public:
     VulkanPipeline() = delete;
-    VulkanPipeline(PipelineInfo& info, VulkanContext& ctx, VkPipelineLayout pipelineLayout);
+    VulkanPipeline(PipelineInfo& info, vulkan::VulkanContext& ctx, VkPipelineLayout pipelineLayout);
     ~VulkanPipeline();
 
     /// @brief Set the commandBuffer to send command for bindVertexBuffer()
@@ -34,7 +35,7 @@ public:
     uint32_t getBindedNumberOfVerticles() { return m_numberOfVerticlesInBindedObject; }
 
 private:
-    VulkanContext* m_ctx;
+    vulkan::VulkanContext* m_ctx;
 
     VkPipeline m_pipeline;
     VkPipelineLayout m_pipelineLayout;

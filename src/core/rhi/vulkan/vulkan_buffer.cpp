@@ -1,9 +1,10 @@
 #include "core/rhi/vulkan/vulkan_buffer.h"
+#include "core/rhi/vulkan/vulkan_initializer.h"
 
 #include "utils/log.h"
 
 // TODO: Handle memory allcoation error
-VulkanBuffer::VulkanBuffer(size_t size, const void* data, const VulkanContext& ctx, VulkanBufferType type) : m_ctx(ctx), m_size(size), m_type(type) {
+VulkanBuffer::VulkanBuffer(size_t size, const void* data, const vulkan::VulkanContext& ctx, VulkanBufferType type) : m_ctx(ctx), m_size(size), m_type(type) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -23,7 +24,7 @@ VulkanBuffer::VulkanBuffer(size_t size, const void* data, const VulkanContext& c
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, ctx);
+    allocInfo.memoryTypeIndex = vulkan::findMemoryType(ctx, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     result = vkAllocateMemory(ctx.device, &allocInfo, nullptr, &m_bufferMemory) ;
     if (result != VK_SUCCESS) {
@@ -74,14 +75,3 @@ void VulkanBuffer::setData(size_t size, const void *data, size_t offset) {
     //vkUnmapMemory(m_ctx.device, m_bufferMemory);
 }
 
-uint32_t VulkanBuffer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, const VulkanContext& ctx) {
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(ctx.physicalDevice, &memProperties);
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
-        }
-    }
-    ENGINE_LOG_CRITICAL("VulkanRHI::Failed to find suitable memory type");
-    throw std::runtime_error("Failed to find suitable memory type");
-}
