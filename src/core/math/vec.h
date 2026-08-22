@@ -61,7 +61,7 @@ struct Vec3
         return *this;
     }
 
-    operator glm::vec3() const {
+    operator glm::vec3 () const {
         return glm::vec3(x, y, z);
     }
 };
