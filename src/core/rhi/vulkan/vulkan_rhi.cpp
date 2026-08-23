@@ -6,15 +6,21 @@ using namespace vulkan;
 void VulkanRHI::initialize(Window *window) {
     m_window = window;
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     m_ctx = vulkan::createContext(window); // Window created here
 
+    m_window->setWindowSizeCallback([this](int width, int height) {
+        this->onWindowResize(width, height);
+    });
+
     int width, height;
     glfwGetFramebufferSize(static_cast<GLFWwindow*>(m_window->getNativeHandle()), &width, &height);
+    m_width = width;
+    m_height = height;
 
-    vulkan::createSwapchain(m_ctx, width, height);
-    vulkan::createDepthBuffer(m_ctx, width, height);
+    vulkan::createSwapchain(m_ctx, m_width, m_height);
+    vulkan::createDepthBuffer(m_ctx, m_width, m_height);
     vulkan::createFenceAndSemaphore(m_ctx);
     vulkan::createCommandPool(m_ctx);
     vulkan::createCommandBuffer(m_ctx);
@@ -25,6 +31,12 @@ void VulkanRHI::initialize(Window *window) {
     vulkan::createPipelineLayout(m_ctx);
 
     ENGINE_LOG_INFO("VulkanRHI::Initialization success");
+}
+
+void VulkanRHI::onWindowResize(int width, int height) {
+    m_framebufferResized = true;
+    m_height = height;
+    m_width = width;
 }
 
 void VulkanRHI::shutdown() {
@@ -67,7 +79,18 @@ void VulkanRHI::shutdown() {
  ********************** RENDER FUNCTION ***********************
  ***************************************************************/
 void VulkanRHI::beginFrame() {
-    ENGINE_LOG_DEBUG("VulkanRHI::Begin of frame");
+    ENGINE_LOG_TRACE("VulkanRHI::Begin of frame");
+
+    if (m_framebufferResized) {
+        ENGINE_LOG_DEBUG("VulkanRHI::Windows resized");
+
+        vulkan::cleanupSwapchain(m_ctx);
+        vulkan::cleanupDepthBuffer(m_ctx);
+
+        vulkan::createSwapchain(m_ctx, m_width, m_height);
+        vulkan::createDepthBuffer(m_ctx, m_width, m_height);
+        m_framebufferResized = false;
+    }
 
     auto& sync = m_ctx.syncObjects[m_currentFrame];
     // Wait for gpu
@@ -127,7 +150,7 @@ void VulkanRHI::beginFrame() {
 
     VkRenderingInfo renderingInfo{};
     renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    renderingInfo.renderArea = { {0, 0}, {WIDTH, HEIGHT} };
+    renderingInfo.renderArea = { {0, 0}, {m_width, m_height} };
     renderingInfo.layerCount = 1;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachment;
@@ -138,14 +161,14 @@ void VulkanRHI::beginFrame() {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width  = static_cast<float>(WIDTH);
-    viewport.height = static_cast<float>(HEIGHT);
+    viewport.width  = static_cast<float>(m_width);
+    viewport.height = static_cast<float>(m_height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = {WIDTH ,HEIGHT};
+    scissor.extent = {m_width ,m_height};
 
     vkCmdSetViewport(m_ctx.cmdBuffers[m_currentFrame], 0, 1, &viewport);
     vkCmdSetScissor(m_ctx.cmdBuffers[m_currentFrame], 0, 1, &scissor);
@@ -199,7 +222,7 @@ void VulkanRHI::endFrame() {
 
     m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     glfwPollEvents();
-    ENGINE_LOG_DEBUG("VulkanRHI::End of frame");
+    ENGINE_LOG_TRACE("VulkanRHI::End of frame");
 }
 
 void VulkanRHI::clear() {

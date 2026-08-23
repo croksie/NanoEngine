@@ -81,6 +81,7 @@ void createPipelineLayout(VulkanContext& ctx);
 
 // CleanUp
 void cleanupSwapchain(VulkanContext& ctx);
+void cleanupDepthBuffer(VulkanContext& ctx);
 
 // Utility
 uint32_t findMemoryType(const VulkanContext& ctx, uint32_t typeFilter, VkMemoryPropertyFlags properties);

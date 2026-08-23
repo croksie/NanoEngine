@@ -322,14 +322,45 @@ void vulkan::createPipelineLayout(VulkanContext &ctx) {
 void vulkan::cleanupSwapchain(VulkanContext &ctx) {
     vkDeviceWaitIdle(ctx.device);
 
-    vkDestroySwapchainKHR(ctx.device, ctx.swapchain, nullptr);
     //destroy swapchain resources
-    for (int i = 0; i < ctx.swapchainImageViews.size(); i++) {
-        vkDestroyImageView(ctx.device, ctx.swapchainImageViews[i], nullptr);
+    for (auto view : ctx.swapchainImageViews) {
+        vkDestroyImageView(ctx.device, view, nullptr);
     }
+    ctx.swapchainImageViews.clear();
+    ctx.swapchainImages.clear();
 
+    if (ctx.swapchain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(ctx.device, ctx.swapchain, nullptr);
+        ctx.swapchain = VK_NULL_HANDLE;
+    }
 }
 
+void vulkan::cleanupDepthBuffer(VulkanContext& ctx) {
+    for (size_t i = 0; i < ctx.depthImageViews.size(); i++) {
+        if (ctx.depthImageViews[i] != VK_NULL_HANDLE) {
+            vkDestroyImageView(ctx.device, ctx.depthImageViews[i], nullptr);
+            ctx.depthImageViews[i] = VK_NULL_HANDLE;
+        }
+    }
+
+    for (size_t i = 0; i < ctx.depthImages.size(); i++) {
+        if (ctx.depthImages[i] != VK_NULL_HANDLE) {
+            vkDestroyImage(ctx.device, ctx.depthImages[i], nullptr);
+            ctx.depthImages[i] = VK_NULL_HANDLE;
+        }
+    }
+
+    for (size_t i = 0; i < ctx.depthImageMemories.size(); i++) {
+        if (ctx.depthImageMemories[i] != VK_NULL_HANDLE) {
+            vkFreeMemory(ctx.device, ctx.depthImageMemories[i], nullptr);
+            ctx.depthImageMemories[i] = VK_NULL_HANDLE;
+        }
+    }
+
+    ctx.depthImageViews.clear();
+    ctx.depthImages.clear();
+    ctx.depthImageMemories.clear();
+}
 
 
 

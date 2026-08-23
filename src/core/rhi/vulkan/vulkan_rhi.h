@@ -49,6 +49,11 @@ private:
 
     VulkanPipeline* m_currentPipeline = nullptr;
 
+    void onWindowResize(int width, int heigth);
+    bool m_framebufferResized = false;
+    uint32_t m_width;
+    uint32_t m_height;
+
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-};
+};
