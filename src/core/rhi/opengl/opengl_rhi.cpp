@@ -52,8 +52,8 @@ void OpenGLRHI::initialize(Window* window)
     glDepthFunc(GL_LESS);
     // Backface-Culling
     glEnable(GL_CULL_FACE);  
-    glCullFace(GL_BACK);  
-    glFrontFace(GL_CCW);
+    glCullFace(GL_FRONT);  
+    glFrontFace(GL_CW);
 
     m_uniformBuffer = std::make_unique<OpenGLBuffer>(2000, nullptr); // FIXME Change the buffer size
 
