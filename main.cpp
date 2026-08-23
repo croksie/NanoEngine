@@ -4,8 +4,12 @@
 
 int main() 
 {
-
-    spdlog::set_level(spdlog::level::info);
+    #ifdef DEBUG
+        spdlog::set_level(spdlog::level::debug);
+        ENGINE_LOG_DEBUG("Debug mode enabled");
+    #else
+        spdlog::set_level(spdlog::level::info);
+    #endif
 
     ENGINE_LOG_INFO("NanoEngine starting ...");
 
