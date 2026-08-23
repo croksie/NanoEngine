@@ -35,4 +35,6 @@ private:
     Window* m_window = nullptr;
 
     std::unique_ptr<OpenGLBuffer> m_uniformBuffer;
+
+    void onWindowResize(int width, int heigth);
 };

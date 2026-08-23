@@ -16,22 +16,58 @@ void OpenGLRHI::initialize(Window* window)
 
     m_window->initializeWindow(1280, 720, "NanoEngine");
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(m_window->getNativeHandle()));
+    
+    m_window->setWindowSizeCallback([this](int width, int height) {
+        this->onWindowResize(width, height);
+    });
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         ENGINE_LOG_CRITICAL("Failed to initialize OpenGL context");
         throw std::runtime_error("Failed to initialize OpenGL context");
     }
     
-    ENGINE_LOG_INFO("OpenGL Context Initialized: {}", (const char*)glGetString(GL_VERSION));
+    ENGINE_LOG_INFO("OpenGLRHI::OpengGL Version {}", (const char*)glGetString(GL_VERSION));
+    ENGINE_LOG_INFO("OpenGLRHI::GPU: {}", (const char*)glGetString(GL_RENDERER));
+
+    #ifdef DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+        (void)source;
+        (void)type;
+        (void)id;
+        (void)length;
+        (void)userParam;
+        if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
+        ENGINE_LOG_WARN("OpenGLRHI::Debug: {}", message);
+    }, nullptr);
+    #endif
+
+    glfwSwapInterval(1); // V-sync 0-off, 1-on
 
     glViewport(0, 0, 1280, 720);
+    glEnable(GL_SCISSOR_TEST);
+    // DepthBuffer
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+    // Backface-Culling
+    glEnable(GL_CULL_FACE);  
+    glCullFace(GL_BACK);  
+    glFrontFace(GL_CCW);
 
     m_uniformBuffer = std::make_unique<OpenGLBuffer>(2000, nullptr); // FIXME Change the buffer size
 
+    ENGINE_LOG_INFO("OpenGLRHI::Initialization success");
+
 
 }
+
+void OpenGLRHI::onWindowResize(int width, int height) {
+    glViewport(0, 0, width, height);
+    glScissor(0, 0, width, height);
+
+}
+
 
 
 /// @brief Do nothing in OpenGl
