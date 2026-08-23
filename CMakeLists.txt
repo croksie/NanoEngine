@@ -160,7 +160,7 @@ if(MSVC)
 else()
     target_compile_options(NanoEngine PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-
+target_compile_options(NanoEngine PRIVATE -DDEBUG)
 target_compile_definitions(NanoEngine PRIVATE GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 # Target linked libraries
