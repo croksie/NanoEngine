@@ -58,50 +58,62 @@ void main() {
     FragColor = vec4(ourColor, 1.0f);
 })";
 
+
 float vertices[] = {
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,
-
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-
-     0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,
-
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f
+    // Face Front
+    -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
+    // Face Back
+     0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
+    // Face Left
+    -0.5f, -0.5f, -0.5f,         0.0f, 0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,         0.0f, 0.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,         0.0f, 0.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,         0.0f, 0.0f, 1.0f,
+    // Face Right
+     0.5f, -0.5f,  0.5f,         1.0f, 1.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,         1.0f, 1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,         1.0f, 1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,         1.0f, 1.0f, 0.0f,
+    // Face Up
+    -0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,
+    // Face Down
+    -0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f
 };
-    
+
+uint32_t indices[] = {
+    // Front
+    0, 1, 2,
+    2, 3, 0,
+    // Back
+    4, 5, 6,
+    6, 7, 4,
+    // Left
+    8, 9, 10,
+    10, 11, 8,
+    // Right
+    12, 13, 14,
+    14, 15, 12,
+    // Up
+    16, 17, 18,
+    18, 19, 16,
+    // Down
+    20, 21, 22,
+    22, 23, 20
+};
+
+
 
 
 void Renderer::createTestModel(){
@@ -118,8 +130,19 @@ void Renderer::createTestModel(){
     Material mat = Material(m_rhi->createPipeline(info));
     ENGINE_LOG_DEBUG("Is pipeline valid ? : {}", mat.getPipeline() != nullptr ? "true" : "false");
 
-    std::shared_ptr<Buffer> buffer = m_rhi->createBuffer(vertices, sizeof(vertices));
-    Mesh mesh = Mesh(buffer);
+    BufferDesc vertexBufferDesc{};
+    vertexBufferDesc.initData = vertices;
+    vertexBufferDesc.size = sizeof(vertices);
+    vertexBufferDesc.type = BufferType::VERTEX;
+    std::shared_ptr<Buffer> vertexBuffer = m_rhi->createBuffer(vertexBufferDesc);
+
+    BufferDesc indexBufferDesc{};
+    indexBufferDesc.initData = indices;
+    indexBufferDesc.size = sizeof(indices);
+    indexBufferDesc.type = BufferType::INDEX;
+    std::shared_ptr<Buffer> indexBuffer = m_rhi->createBuffer(indexBufferDesc);
+
+    Mesh mesh = Mesh(vertexBuffer, indexBuffer);
 
     for(int i = -15; i<15 ; ++i) {
         for(int j = -15; j<15 ; ++j) {
@@ -177,6 +200,7 @@ void Renderer::render() {
 
         m_rhi->bindPipeline(material->getPipeline().get());
         m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
+        m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
         m_rhi->setLocalUniform(glm::value_ptr(modelMat), sizeof(modelMat));
         m_rhi->draw(material->getPipeline());
     }

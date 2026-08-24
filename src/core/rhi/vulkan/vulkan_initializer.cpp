@@ -1,5 +1,5 @@
 #include "core/rhi/vulkan/vulkan_initializer.h"
-#include "core/rhi/vulkan/vulkan_buffer.h"
+
 
 #include <glm/glm.hpp>
 #include "utils/log.h"
@@ -218,8 +218,11 @@ void vulkan::createCommandBuffer(VulkanContext &ctx) {
 
 void vulkan::createUniformBuffers(VulkanContext &ctx) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating uniform buffer...");
+    BufferDesc desc{};
+    desc.size = 2048;
+    desc.type = BufferType::UNIFORM;
     for (size_t i = 0; i < ctx.maxFramesInFlight; i++) {
-        ctx.uniformBuffers.emplace_back(std::make_unique<VulkanBuffer>(2048, nullptr, ctx, VulkanBufferType::UNIFORM)); // FIXME Change the buffer size
+        ctx.uniformBuffers.emplace_back(std::make_unique<VulkanBuffer>(desc, ctx)); // FIXME Change the buffer size
     }
 }
 

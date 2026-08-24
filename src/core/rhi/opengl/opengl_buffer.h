@@ -7,15 +7,16 @@
 class OpenGLBuffer : public Buffer {
 public:
     OpenGLBuffer() = delete;
-    OpenGLBuffer(size_t size, const void* data);
+    OpenGLBuffer(const BufferDesc& desc);
     ~OpenGLBuffer() ;
 
     void setData(size_t size, const void* data, size_t offset = 0) override;
-    size_t getSize() override;
+    BufferType getType() const override { return m_desc.type; }
+    size_t getSize() const override { return m_desc.size; }
 
     GLuint getBufferId() { return m_bufferID; } 
 
 private :
     GLuint m_bufferID;
-    size_t m_size{0};
+    BufferDesc m_desc;
 };

@@ -22,6 +22,11 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
     ENGINE_LOG_TRACE("OpenGLRHI::Vertex buffer binding...");
     OpenGLBuffer* buffer = static_cast<OpenGLBuffer*>(vertexBuffer.get());
 
+    if(buffer->getType() != BufferType::VERTEX) {
+        ENGINE_LOG_ERROR("OpenGLRHI::Buffer is not of type VERTEX");
+        return;
+    }
+
     GLuint attribPos = 0;
     GLuint attribCol = 1;
 
@@ -44,4 +49,17 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
 
     glVertexArrayAttribBinding(m_vertexArrayID, attribPos, vaoBindingPoint);
     glVertexArrayAttribBinding(m_vertexArrayID, attribCol, vaoBindingPoint);
+}
+
+void OpenGLPipeline::bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) {
+    ENGINE_LOG_TRACE("OpenGLRHI::Index buffer binding...");
+    OpenGLBuffer* buffer = static_cast<OpenGLBuffer*>(indexBuffer.get());
+
+    if (buffer->getType() != BufferType::INDEX) {
+        ENGINE_LOG_ERROR("OpenGLRHI::Buffer is not of type INDEX");
+        return;
+    }
+
+    glVertexArrayElementBuffer(m_vertexArrayID, buffer->getBufferId());
+    m_numberOfIndicesInBindedObject = static_cast<GLsizei>(buffer->getSize() / sizeof(uint32_t));
 }

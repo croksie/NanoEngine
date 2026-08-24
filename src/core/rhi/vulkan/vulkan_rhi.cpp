@@ -239,13 +239,13 @@ void VulkanRHI::clear() {
 /******** Draw ********/
 void VulkanRHI::draw(std::shared_ptr<Pipeline> pipeline) {
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
-    vkCmdDraw(m_ctx.cmdBuffers[m_currentFrame], vulkanPipeline->getBindedNumberOfVerticles(), 1, 0, 0);
+    vkCmdDrawIndexed(m_ctx.cmdBuffers[m_currentFrame], vulkanPipeline->getBindedNumberOfIndices(), 1, 0, 0, 0);
 }
 
 /******** Buffer ********/
-std::shared_ptr<Buffer> VulkanRHI::createBuffer(float vertices[], size_t size) {
+std::shared_ptr<Buffer> VulkanRHI::createBuffer(BufferDesc& desc) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating buffer...");
-    return std::make_shared<VulkanBuffer>(size, vertices, m_ctx, VulkanBufferType::VERTEX);
+    return std::make_shared<VulkanBuffer>(desc, m_ctx);
 }
 
 void VulkanRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
@@ -254,6 +254,14 @@ void VulkanRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared
 
     vulkanPipeline->setCmdBuffer(m_ctx.cmdBuffers[m_currentFrame]);
     vulkanPipeline->bindVertexBuffer(buffer);
+}
+
+void VulkanRHI::bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
+    ENGINE_LOG_TRACE("VulkanRHI::Binding index buffer...");
+    VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
+
+    vulkanPipeline->setCmdBuffer(m_ctx.cmdBuffers[m_currentFrame]);
+    vulkanPipeline->bindIndexBuffer(buffer);
 }
 
 /******** PIPELINE/SHADER ********/

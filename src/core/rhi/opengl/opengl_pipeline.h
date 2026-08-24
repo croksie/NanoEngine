@@ -13,17 +13,21 @@ public:
     OpenGLPipeline() = delete;
     OpenGLPipeline(PipelineInfo& info);
     ~OpenGLPipeline() {}
+    
     void bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) override;
+    void bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) override;
 
     GLuint getVertexArrayID() { return m_vertexArrayID; }
     GLuint getShaderProgramID() { return m_shaderProgamID; }
 
     GLsizei getBindedNumberOfVerticles() { return m_numberOfVerticlesInBindedObject; };
+    GLsizei getBindedNumberOfIndices() { return m_numberOfIndicesInBindedObject; };
 
 private:
     GLuint m_vertexArrayID;
     GLuint m_shaderProgamID;
 
     GLsizei m_numberOfVerticlesInBindedObject;
+    GLsizei m_numberOfIndicesInBindedObject;
 
 };

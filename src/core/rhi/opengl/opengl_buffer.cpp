@@ -2,9 +2,9 @@
 
 
 
-OpenGLBuffer::OpenGLBuffer(size_t size, const void* data) : m_size(size) {
+OpenGLBuffer::OpenGLBuffer(const BufferDesc& desc) : m_desc(desc) {
     glCreateBuffers(1, &m_bufferID);
-    glNamedBufferStorage(m_bufferID, size, data, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(m_bufferID, desc.size, desc.initData, GL_DYNAMIC_STORAGE_BIT);
 }
 
 OpenGLBuffer::~OpenGLBuffer() {
@@ -13,10 +13,6 @@ OpenGLBuffer::~OpenGLBuffer() {
 }
 
 void OpenGLBuffer::setData(size_t size, const void* data, size_t offset) {
-    m_size = size;
+    m_desc.size = size;
     glNamedBufferSubData(m_bufferID, offset, size, data);
 }
-
-size_t OpenGLBuffer::getSize() {
-    return m_size;
-}  

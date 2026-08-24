@@ -1,6 +1,7 @@
 #pragma once
 #include "core/window.h"
 #include "core/config.h"
+#include "core/rhi/vulkan/vulkan_buffer.h"
 
 #include <VkBootstrap.h>
 #include <GLFW/glfw3.h>

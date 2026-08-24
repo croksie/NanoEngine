@@ -16,4 +16,6 @@ public:
     virtual ~Pipeline() = default;
 
     virtual void bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) = 0;
+    virtual void bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) = 0;
+
 };

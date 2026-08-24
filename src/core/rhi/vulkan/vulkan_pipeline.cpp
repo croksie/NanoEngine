@@ -127,22 +127,25 @@ VulkanPipeline::VulkanPipeline(PipelineInfo& info, vulkan::VulkanContext& ctx, V
         ENGINE_LOG_TRACE("VulkanPipeline::Pipeline created");
 }
 
-
-
-
 VulkanPipeline::~VulkanPipeline() {
     vkDeviceWaitIdle(m_ctx->device);
     vkDestroyPipeline(m_ctx->device, m_pipeline, nullptr);
 }
 
+
 void VulkanPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) {
     VulkanBuffer* vulkanVertexBuffer = static_cast<VulkanBuffer*>(vertexBuffer.get());
 
-    ENGINE_LOG_TRACE("VulkanPipeline::Binding vertex buffer...");
     vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1, vulkanVertexBuffer->getBufferHandle(), offsets);
 
     m_numberOfVerticlesInBindedObject = static_cast<uint32_t>(vulkanVertexBuffer->getSize() / VERTICLE_SIZE); // TODO: 
 
+}
+
+void VulkanPipeline::bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) {
+    VulkanBuffer* vulkanIndexBuffer = static_cast<VulkanBuffer*>(indexBuffer.get());
+    vkCmdBindIndexBuffer(m_cmdBuffer, *vulkanIndexBuffer->getBufferHandle(), 0, VK_INDEX_TYPE_UINT32);
+    m_numberOfIndicesInBindedObject = static_cast<uint32_t>(vulkanIndexBuffer->getSize() / sizeof(uint32_t));
 }
