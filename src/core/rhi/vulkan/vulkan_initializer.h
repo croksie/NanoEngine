@@ -1,5 +1,6 @@
 #pragma once
 #include "core/window.h"
+#include "core/config.h"
 
 #include <VkBootstrap.h>
 #include <GLFW/glfw3.h>
@@ -10,12 +11,6 @@
 
 class VulkanBuffer;
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 3;
-
-const uint32_t WIDTH = 1280;
-const uint32_t HEIGHT = 720;
-
-
 namespace vulkan {
 
 struct FrameSyncObjects {
@@ -25,17 +20,25 @@ struct FrameSyncObjects {
 };
 
 struct VulkanContext {
-    VkInstance instance;
+    VulkanContext(uint32_t maxFramesInFlight = 3) 
+        : maxFramesInFlight(maxFramesInFlight),
+          syncObjects(maxFramesInFlight),
+          cmdBuffers(maxFramesInFlight),
+          descriptorSets(maxFramesInFlight) {}
+
+    uint32_t maxFramesInFlight = 3;
+
+    VkInstance instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physicalDevice;
-    VkDevice device;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-    uint32_t graphicsQueueFamily;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkQueue presentQueue = VK_NULL_HANDLE;
+    uint32_t graphicsQueueFamily = 0;
 
     // Swapchain
-    VkSwapchainKHR swapchain;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkFormat swapchainFormat;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
@@ -47,11 +50,11 @@ struct VulkanContext {
     std::vector<VkImageView> depthImageViews;
 
     // Fences / Semaphores
-    std::vector<FrameSyncObjects> syncObjects{MAX_FRAMES_IN_FLIGHT};
+    std::vector<FrameSyncObjects> syncObjects;
 
     // CommandPool / CommandBuffer
-    VkCommandPool cmdPool;
-    std::vector<VkCommandBuffer> cmdBuffers{MAX_FRAMES_IN_FLIGHT};
+    VkCommandPool cmdPool = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> cmdBuffers;
     
     // Uniform Buffers
     std::vector<std::unique_ptr<VulkanBuffer>> uniformBuffers;
@@ -59,7 +62,7 @@ struct VulkanContext {
     // Descriptors
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> descriptorSets{MAX_FRAMES_IN_FLIGHT};
+    std::vector<VkDescriptorSet> descriptorSets;
 
     // Pipeline Layout
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
@@ -67,7 +70,7 @@ struct VulkanContext {
 
 
 // Initialize
-VulkanContext createContext(Window* window);
+VulkanContext createContext(Window* window, std::shared_ptr<EngineConfig> config);
 void createSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
 void createDepthBuffer(VulkanContext& ctx, uint32_t width, uint32_t height);
 void createFenceAndSemaphore(VulkanContext& ctx);

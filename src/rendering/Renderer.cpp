@@ -9,7 +9,7 @@
 #include <string>
 
 
-std::string vertexShaderSource = R"(
+std::string vulkaVertexShaderSource = R"(
 #version 450 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aCol;
@@ -31,7 +31,7 @@ void main() {
 }
 )";
 
-std::string vertexShaderSource1 = R"(
+std::string openglVertexShaderSource = R"(
 #version 450 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aCol;
@@ -107,7 +107,12 @@ float vertices[] = {
 void Renderer::createTestModel(){
     // Create pipeline
     PipelineInfo info;
-    info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, vertexShaderSource);
+    if(m_config->api == GraphicsAPI::OpenGL) {
+        info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, openglVertexShaderSource);
+    }
+    else {
+        info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, vulkaVertexShaderSource);
+    }
     info.fragmentShader = m_rhi->createShader(ShaderType::FRAGMENT, fragmentShaderSource);
 
     Material mat = Material(m_rhi->createPipeline(info));
@@ -125,14 +130,16 @@ void Renderer::createTestModel(){
     }
 }
 
-void Renderer::initialize(Window* window) {
+void Renderer::initialize(Window* window, std::shared_ptr<EngineConfig> config) {
     ENGINE_LOG_INFO("Renderer initializing ...");
-
+    m_config = config;
     // Init RHI
-    // **************************************************************************
-    m_rhi = std::make_unique<VulkanRHI>();
-    // **************************************************************************
-    m_rhi->initialize(window);
+    if(m_config->api == GraphicsAPI::OpenGL) {
+        m_rhi = std::make_unique<OpenGLRHI>();
+    } else {
+        m_rhi = std::make_unique<VulkanRHI>();
+    }
+    m_rhi->initialize(window, m_config);
 
     createTestModel();
 
@@ -151,16 +158,20 @@ void Renderer::render() {
     const void* data = matrices;
 
 
-    ENGINE_LOG_DEBUG("Render start");
+    ENGINE_LOG_TRACE("Render start");
     m_rhi->beginFrame();
     m_rhi->clear();
     m_rhi->setGlobalUniform(data, sizeof(matrices));
+
+
+
 
     for (auto& model : models) {
         glm::mat4 modelMat = glm::mat4(1.0f);
         modelMat = glm::translate(modelMat, (glm::vec3)model.getPosition());
         modelMat = glm::rotate(modelMat, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
         modelMat = glm::rotate(modelMat, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        
         std::shared_ptr<Mesh> mesh = model.getMesh();
         std::shared_ptr<Material> material = model.getMaterial();
 
@@ -171,7 +182,7 @@ void Renderer::render() {
     }
 
     m_rhi->endFrame();
-    ENGINE_LOG_DEBUG("Render end");
+    ENGINE_LOG_TRACE("Render end");
 }
 
 void Renderer::shutdown()

@@ -1,9 +1,15 @@
 #include "core/window.h"
+#include "core/config.h"
 #include "rendering/renderer.h"
 #include "utils/log.h"
 
+#include <memory>
+
 int main() 
 {
+    std::shared_ptr<EngineConfig> config = std::make_shared<EngineConfig>();
+    config->api = GraphicsAPI::OpenGL;
+
     #ifdef DEBUG
         spdlog::set_level(spdlog::level::debug);
         ENGINE_LOG_DEBUG("Debug mode enabled");
@@ -16,7 +22,7 @@ int main()
     Window window;
 
     Renderer renderer;
-    renderer.initialize(&window);
+    renderer.initialize(&window, config);
 
     static auto lastTime = std::chrono::high_resolution_clock::now();
     static int frameCount = 0;

@@ -1,6 +1,7 @@
 #pragma once
 #include "core/rhi/rhi.h"
 #include "core/window.h"
+#include "core/config.h"
 #include "core/rhi/vulkan/vulkan_initializer.h"
 #include "core/rhi/vulkan/vulkan_buffer.h"
 #include "core/rhi/vulkan/vulkan_pipeline.h"
@@ -19,7 +20,7 @@ class VulkanBuffer;
 
 class VulkanRHI : public RHI {
 public:
-    void initialize(Window* window) override;
+    void initialize(Window* window, std::shared_ptr<EngineConfig> config) override;
     void shutdown() override;
 
     void beginFrame() override;
@@ -42,6 +43,7 @@ public:
 
 private:
     Window* m_window = nullptr;
+    std::shared_ptr<EngineConfig> m_config;
 
     vulkan::VulkanContext m_ctx{};
     uint32_t m_currentFrame = 0;

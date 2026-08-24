@@ -4,10 +4,10 @@
 #include <glm/glm.hpp>
 #include "utils/log.h"
 
-vulkan::VulkanContext vulkan::createContext(Window *window) {
-    window->initializeWindow(WIDTH, HEIGHT, "NanoEngine");
+vulkan::VulkanContext vulkan::createContext(Window *window, std::shared_ptr<EngineConfig> config) {
+    window->initializeWindow(config->windowWidth, config->windowHeight, config->windowTitle.c_str());
 
-    vulkan::VulkanContext ctx;
+    vulkan::VulkanContext ctx(config->maxFramesInFlight);
 
     ENGINE_LOG_TRACE("VulkanRHI::Creating instance...");
     // Use vkboostrap to initialize vulkan
@@ -119,11 +119,11 @@ void vulkan::createDepthBuffer(VulkanContext &ctx, uint32_t width, uint32_t heig
 
     // DepthImages
     ENGINE_LOG_TRACE("VulkanRHI::Creating depth resources...");
-    ctx.depthImages.resize(MAX_FRAMES_IN_FLIGHT);
-    ctx.depthImageMemories.resize(MAX_FRAMES_IN_FLIGHT);
-    ctx.depthImageViews.resize(MAX_FRAMES_IN_FLIGHT);
+    ctx.depthImages.resize(ctx.maxFramesInFlight);
+    ctx.depthImageMemories.resize(ctx.maxFramesInFlight);
+    ctx.depthImageViews.resize(ctx.maxFramesInFlight);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < ctx.maxFramesInFlight; i++) {
         VkImageCreateInfo depthImageInfo{};
         depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -186,7 +186,7 @@ void vulkan::createFenceAndSemaphore(VulkanContext &ctx) {
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < ctx.maxFramesInFlight; i++) {
         vkCreateSemaphore(ctx.device, &semaphoreInfo, nullptr, &ctx.syncObjects[i].imageAvailableSemaphore);
         vkCreateSemaphore(ctx.device, &semaphoreInfo, nullptr, &ctx.syncObjects[i].renderFinishedSemaphore);
         vkCreateFence(ctx.device, &fenceInfo, nullptr, &ctx.syncObjects[i].inFlightFence);
@@ -208,7 +208,7 @@ void vulkan::createCommandBuffer(VulkanContext &ctx) {
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = ctx.cmdPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT; 
+    allocInfo.commandBufferCount = ctx.maxFramesInFlight; 
 
     if (vkAllocateCommandBuffers(ctx.device, &allocInfo, ctx.cmdBuffers.data()) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("VulkanRHI::Failed to allocate command buffers");
@@ -218,7 +218,7 @@ void vulkan::createCommandBuffer(VulkanContext &ctx) {
 
 void vulkan::createUniformBuffers(VulkanContext &ctx) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating uniform buffer...");
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < ctx.maxFramesInFlight; i++) {
         ctx.uniformBuffers.emplace_back(std::make_unique<VulkanBuffer>(2048, nullptr, ctx, VulkanBufferType::UNIFORM)); // FIXME Change the buffer size
     }
 }
@@ -247,13 +247,13 @@ void vulkan::createDescriptorPool(VulkanContext &ctx) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating descriptor pool...");
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSize.descriptorCount = static_cast<uint32_t>(ctx.maxFramesInFlight);
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
     descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolInfo.poolSizeCount = 1;
     descriptorPoolInfo.pPoolSizes = &poolSize;
-    descriptorPoolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    descriptorPoolInfo.maxSets = static_cast<uint32_t>(ctx.maxFramesInFlight);
 
     if (vkCreateDescriptorPool(ctx.device, &descriptorPoolInfo, nullptr, &ctx.descriptorPool) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("VulkanRHI::Failed to create descriptor pool");
@@ -263,12 +263,12 @@ void vulkan::createDescriptorPool(VulkanContext &ctx) {
 
 void vulkan::createDescriptorSets(VulkanContext &ctx) {
     ENGINE_LOG_TRACE("VulkanRHI::Allocating descriptor sets...");
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, ctx.descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(ctx.maxFramesInFlight, ctx.descriptorSetLayout);
 
     VkDescriptorSetAllocateInfo descriptorAllocInfo{};
     descriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descriptorAllocInfo.descriptorPool = ctx.descriptorPool;
-    descriptorAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    descriptorAllocInfo.descriptorSetCount = static_cast<uint32_t>(ctx.maxFramesInFlight);
     descriptorAllocInfo.pSetLayouts = layouts.data();
 
     if (vkAllocateDescriptorSets(ctx.device, &descriptorAllocInfo, ctx.descriptorSets.data()) != VK_SUCCESS) {
@@ -277,7 +277,7 @@ void vulkan::createDescriptorSets(VulkanContext &ctx) {
     }
 
     ENGINE_LOG_TRACE("VulkanRHI::Writing descriptor sets...");
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    for (size_t i = 0; i < ctx.maxFramesInFlight; i++) {
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = *ctx.uniformBuffers[i]->getBufferHandle();
         bufferInfo.offset = 0;

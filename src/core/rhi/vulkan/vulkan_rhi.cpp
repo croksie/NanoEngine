@@ -3,12 +3,15 @@
 
 using namespace vulkan;
 
-void VulkanRHI::initialize(Window *window) {
+void VulkanRHI::initialize(Window *window, std::shared_ptr<EngineConfig> config) {
     m_window = window;
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    m_config = config;
 
-    m_ctx = vulkan::createContext(window); // Window created here
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, m_config->resizable);
+    // TODO : implement fullscreen mode
+    
+    m_ctx = vulkan::createContext(window, config);
 
     m_window->setWindowSizeCallback([this](int width, int height) {
         this->onWindowResize(width, height);
@@ -34,6 +37,10 @@ void VulkanRHI::initialize(Window *window) {
 }
 
 void VulkanRHI::onWindowResize(int width, int height) {
+    if (width == 0 || height == 0) return;
+    m_config->windowWidth = width;
+    m_config->windowHeight = height;
+
     m_framebufferResized = true;
     m_height = height;
     m_width = width;
@@ -138,7 +145,7 @@ void VulkanRHI::beginFrame() {
     colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue.color = { { 0.1f, 0.1f, 0.12f, 1.0f } };
+    colorAttachment.clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
     VkRenderingAttachmentInfo depthAttachment{};
     depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -160,9 +167,9 @@ void VulkanRHI::beginFrame() {
 
     VkViewport viewport{};
     viewport.x = 0.0f;
-    viewport.y = 0.0f;
+    viewport.y = static_cast<float>(m_height);
     viewport.width  = static_cast<float>(m_width);
-    viewport.height = static_cast<float>(m_height);
+    viewport.height = -static_cast<float>(m_height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -220,7 +227,7 @@ void VulkanRHI::endFrame() {
 
     vkQueuePresentKHR(m_ctx.presentQueue, &presentInfo);
 
-    m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    m_currentFrame = (m_currentFrame + 1) % m_ctx.maxFramesInFlight;
     glfwPollEvents();
     ENGINE_LOG_TRACE("VulkanRHI::End of frame");
 }

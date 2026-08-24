@@ -1,6 +1,7 @@
 #pragma once
 #include "core/rhi/rhi.h"
 #include "core/window.h"
+#include "core/config.h"
 
 #include "core/rhi/opengl/opengl_buffer.h"
 #include "core/rhi/opengl/opengl_pipeline.h"
@@ -11,7 +12,7 @@
 class OpenGLRHI : public RHI {
 
 public:
-    void initialize(Window* window) override;
+    void initialize(Window* window, std::shared_ptr<EngineConfig> config) override;
     void shutdown() override {}
 
     void beginFrame() override;
@@ -33,6 +34,7 @@ public:
 
 private:
     Window* m_window = nullptr;
+    std::shared_ptr<EngineConfig> m_config;
 
     std::unique_ptr<OpenGLBuffer> m_uniformBuffer;
 

@@ -7,14 +7,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-void OpenGLRHI::initialize(Window* window)
-{
+void OpenGLRHI::initialize(Window* window, std::shared_ptr<EngineConfig> config) {
     m_window = window;
+    m_config = config;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_RESIZABLE, m_config->resizable);
+    // TODO : implement fullscreen mode
 
-    m_window->initializeWindow(1280, 720, "NanoEngine");
+    m_window->initializeWindow(m_config->windowWidth, m_config->windowHeight, m_config->windowTitle.c_str());
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(m_window->getNativeHandle()));
     
     m_window->setWindowSizeCallback([this](int width, int height) {
@@ -43,9 +45,9 @@ void OpenGLRHI::initialize(Window* window)
     }, nullptr);
     #endif
 
-    glfwSwapInterval(1); // V-sync 0-off, 1-on
+    glfwSwapInterval(m_config->vsync ? 1 : 0);
 
-    glViewport(0, 0, 1280, 720);
+    glViewport(0, 0, m_config->windowWidth, m_config->windowHeight);
     glEnable(GL_SCISSOR_TEST);
     // DepthBuffer
     glEnable(GL_DEPTH_TEST);
@@ -63,9 +65,11 @@ void OpenGLRHI::initialize(Window* window)
 }
 
 void OpenGLRHI::onWindowResize(int width, int height) {
+    m_config->windowWidth = width;
+    m_config->windowHeight = height;
+
     glViewport(0, 0, width, height);
     glScissor(0, 0, width, height);
-
 }
 
 

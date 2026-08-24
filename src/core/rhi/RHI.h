@@ -1,14 +1,14 @@
 #pragma once
 #include "core/window.h"
+#include "core/config.h"
 #include "core/rhi/rhi_buffer.h"
 #include "core/rhi/rhi_pipeline.h"
 #include "core/rhi/rhi_shader.h"
 
-
 #include <stddef.h>
 
 #include <memory>
-
+#include <string>
 
 class RHI{
 
@@ -32,7 +32,7 @@ public:
     virtual void setGlobalUniform(const void* data, size_t size) = 0;
     virtual void setLocalUniform(const void* data, size_t size) = 0;
 
-    virtual void initialize(Window* window) = 0;
+    virtual void initialize(Window* window, std::shared_ptr<EngineConfig> config) = 0;
     virtual void shutdown() = 0;
 
     

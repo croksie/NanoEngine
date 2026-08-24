@@ -2,6 +2,7 @@
 #include "core/rhi/rhi.h"
 #include "core/rhi/opengl/opengl_rhi.h"
 #include "core/rhi/vulkan/vulkan_rhi.h"
+#include "core/config.h"
 
 #include "rendering/mesh.h"
 #include "rendering/material.h"
@@ -15,12 +16,13 @@
 
 class Renderer {
 public:
-    void initialize(Window* window);
+    void initialize(Window* window, std::shared_ptr<EngineConfig> config);
     void render();
     void shutdown();
 
 
 private:
+    std::shared_ptr<EngineConfig> m_config;
     std::unique_ptr<RHI> m_rhi;
 
     std::vector<Model> models;
