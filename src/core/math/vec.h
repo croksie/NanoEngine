@@ -28,6 +28,10 @@ struct Vec2
         y -= other.y;
         return *this;
     }
+
+    operator glm::vec2 () const {
+        return glm::vec2(x, y);
+    }
 };
 
 struct Vec3
@@ -98,5 +102,9 @@ struct Vec4
         z -= other.z;
         w -= other.w;
         return *this;
+    }
+
+    operator glm::vec4 () const {
+        return glm::vec4(x, y, z, w);
     }
 };
