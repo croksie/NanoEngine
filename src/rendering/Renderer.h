@@ -1,12 +1,12 @@
 #pragma once
-#include "core/rhi/rhi.h"
-#include "core/rhi/opengl/opengl_rhi.h"
-#include "core/rhi/vulkan/vulkan_rhi.h"
+#include "rhi/rhi.h"
+#include "rhi/opengl/opengl_rhi.h"
+#include "rhi/vulkan/vulkan_rhi.h"
 #include "core/config.h"
 
-#include "rendering/mesh.h"
-#include "rendering/material.h"
-#include "rendering/model.h"
+#include "ressources/mesh.h"
+#include "ressources/material.h"
+#include "scene/model.h"
 
 #include <memory>
 #include <vector>

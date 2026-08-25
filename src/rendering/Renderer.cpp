@@ -106,9 +106,9 @@ uint32_t indices[] = {
 void Renderer::createTestModel(){
     // Create texture
     int width = 0, height = 0, nrChannels = 0;
-    unsigned char *data = stbi_load("../../src/assets/textures/wall.jpg", &width, &height, &nrChannels, STBI_rgb_alpha);
+    unsigned char *data = stbi_load("../../assets/textures/wall.jpg", &width, &height, &nrChannels, STBI_rgb_alpha);
     if (!data) {
-        ENGINE_LOG_ERROR("Renderer::createTestModel: Failed to load texture '../../src/assets/textures/wall.jpg'");
+        ENGINE_LOG_ERROR("Renderer::createTestModel: Failed to load texture '../../assets/textures/wall.jpg'");
     } else {
         ENGINE_LOG_INFO("Renderer::createTestModel: Loaded texture ({}x{}, channels: {})", width, height, nrChannels);
     }
