@@ -1,8 +1,10 @@
 #include "core/rhi/vulkan/vulkan_initializer.h"
 
+#include "utils/log.h"
 
 #include <glm/glm.hpp>
-#include "utils/log.h"
+
+#include <array>
 
 vulkan::VulkanContext vulkan::createContext(Window *window, std::shared_ptr<EngineConfig> config) {
     window->initializeWindow(config->windowWidth, config->windowHeight, config->windowTitle.c_str());
@@ -235,10 +237,19 @@ void vulkan::createDescriptorSetLayout(VulkanContext &ctx) {
     globalLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT; // Accessible dans le vertex shader
     globalLayoutBinding.pImmutableSamplers = nullptr;
 
+    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT; // Accessible dans le fragment shader
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { globalLayoutBinding, samplerLayoutBinding };
+
     VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
     descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorLayoutInfo.bindingCount = 1;
-    descriptorLayoutInfo.pBindings = &globalLayoutBinding;
+    descriptorLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    descriptorLayoutInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(ctx.device, &descriptorLayoutInfo, nullptr, &ctx.descriptorSetLayout) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("VulkanRHI::Failed to create descriptor set layout");
@@ -248,14 +259,16 @@ void vulkan::createDescriptorSetLayout(VulkanContext &ctx) {
 
 void vulkan::createDescriptorPool(VulkanContext &ctx) {
     ENGINE_LOG_TRACE("VulkanRHI::Creating descriptor pool...");
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(ctx.maxFramesInFlight);
+    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount = static_cast<uint32_t>(ctx.maxFramesInFlight);
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(ctx.maxFramesInFlight);
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
     descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolInfo.poolSizeCount = 1;
-    descriptorPoolInfo.pPoolSizes = &poolSize;
+    descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+    descriptorPoolInfo.pPoolSizes = poolSizes.data();
     descriptorPoolInfo.maxSets = static_cast<uint32_t>(ctx.maxFramesInFlight);
 
     if (vkCreateDescriptorPool(ctx.device, &descriptorPoolInfo, nullptr, &ctx.descriptorPool) != VK_SUCCESS) {
@@ -381,4 +394,63 @@ uint32_t vulkan::findMemoryType(const VulkanContext& ctx, uint32_t typeFilter, V
     }
     ENGINE_LOG_CRITICAL("VulkanRHI::Failed to find suitable memory type");
     throw std::runtime_error("Failed to find suitable memory type");
+}
+
+VkCommandBuffer vulkan::beginSingleTimeCommands(const VulkanContext& ctx) {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = ctx.cmdPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(ctx.device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    return commandBuffer;
+}
+
+void vulkan::endSingleTimeCommands(const VulkanContext& ctx, VkCommandBuffer commandBuffer) {
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(ctx.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(ctx.graphicsQueue);
+
+    vkFreeCommandBuffers(ctx.device, ctx.cmdPool, 1, &commandBuffer);
+}
+
+void vulkan::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+                                   VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,
+                                   VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess,
+                                   VkImageAspectFlags aspectMask) {
+    VkImageMemoryBarrier2 barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+    barrier.srcStageMask = srcStage;
+    barrier.srcAccessMask = srcAccess;
+    barrier.dstStageMask = dstStage;
+    barrier.dstAccessMask = dstAccess;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = aspectMask;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkDependencyInfo depInfo{};
+    depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    depInfo.imageMemoryBarrierCount = 1;
+    depInfo.pImageMemoryBarriers = &barrier;
+
+    vkCmdPipelineBarrier2(cmd, &depInfo);
 }

@@ -14,7 +14,9 @@ inline VkBufferUsageFlagBits bufferTypeToVulkanType(BufferType type) {
     std::unordered_map<BufferType, VkBufferUsageFlagBits> map = {
         {BufferType::VERTEX, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT},
         {BufferType::INDEX, VK_BUFFER_USAGE_INDEX_BUFFER_BIT},
-        {BufferType::UNIFORM, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT}
+        {BufferType::UNIFORM, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT},
+        {BufferType::STORAGE, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT},
+        {BufferType::TRANSFER, VK_BUFFER_USAGE_TRANSFER_SRC_BIT}
     };
     return map[type];
 };

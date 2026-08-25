@@ -99,7 +99,7 @@ void VulkanRHI::beginFrame() {
         m_framebufferResized = false;
     }
 
-    auto& sync = m_ctx.syncObjects[m_currentFrame];
+    auto& sync = m_ctx.syncObjects[m_ctx.currentFrame];
     // Wait for gpu
     vkWaitForFences(m_ctx.device, 1, &sync.inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(m_ctx.device, 1, &sync.inFlightFence);
@@ -110,13 +110,13 @@ void VulkanRHI::beginFrame() {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-    if (vkBeginCommandBuffer(m_ctx.cmdBuffers[m_currentFrame], &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(m_ctx.cmdBuffers[m_ctx.currentFrame], &beginInfo) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("VulkanRHI::Failed to begin recording command buffer!");
         throw std::runtime_error("Failed to begin recording command buffer!");
     }
 
-    transitionImageLayout(
-        m_ctx.cmdBuffers[m_currentFrame],
+    vulkan::transitionImageLayout(
+        m_ctx.cmdBuffers[m_ctx.currentFrame],
         m_ctx.swapchainImages[m_imageIndex],
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -127,9 +127,9 @@ void VulkanRHI::beginFrame() {
         VK_IMAGE_ASPECT_COLOR_BIT
     );
 
-    transitionImageLayout(
-        m_ctx.cmdBuffers[m_currentFrame],
-        m_ctx.depthImages[m_currentFrame],
+    vulkan::transitionImageLayout(
+        m_ctx.cmdBuffers[m_ctx.currentFrame],
+        m_ctx.depthImages[m_ctx.currentFrame],
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
         VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
@@ -149,7 +149,7 @@ void VulkanRHI::beginFrame() {
 
     VkRenderingAttachmentInfo depthAttachment{};
     depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    depthAttachment.imageView = m_ctx.depthImageViews[m_currentFrame];
+    depthAttachment.imageView = m_ctx.depthImageViews[m_ctx.currentFrame];
     depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -163,7 +163,7 @@ void VulkanRHI::beginFrame() {
     renderingInfo.pColorAttachments = &colorAttachment;
     renderingInfo.pDepthAttachment = &depthAttachment;
 
-    vkCmdBeginRendering(m_ctx.cmdBuffers[m_currentFrame], &renderingInfo);
+    vkCmdBeginRendering(m_ctx.cmdBuffers[m_ctx.currentFrame], &renderingInfo);
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -177,15 +177,15 @@ void VulkanRHI::beginFrame() {
     scissor.offset = {0, 0};
     scissor.extent = {m_width ,m_height};
 
-    vkCmdSetViewport(m_ctx.cmdBuffers[m_currentFrame], 0, 1, &viewport);
-    vkCmdSetScissor(m_ctx.cmdBuffers[m_currentFrame], 0, 1, &scissor);
+    vkCmdSetViewport(m_ctx.cmdBuffers[m_ctx.currentFrame], 0, 1, &viewport);
+    vkCmdSetScissor(m_ctx.cmdBuffers[m_ctx.currentFrame], 0, 1, &scissor);
 }
 
 void VulkanRHI::endFrame() {
-    vkCmdEndRendering(m_ctx.cmdBuffers[m_currentFrame]);
+    vkCmdEndRendering(m_ctx.cmdBuffers[m_ctx.currentFrame]);
 
-    transitionImageLayout(
-        m_ctx.cmdBuffers[m_currentFrame],
+    vulkan::transitionImageLayout(
+        m_ctx.cmdBuffers[m_ctx.currentFrame],
         m_ctx.swapchainImages[m_imageIndex],
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -194,9 +194,9 @@ void VulkanRHI::endFrame() {
         VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT,
         0
     );
-    vkEndCommandBuffer(m_ctx.cmdBuffers[m_currentFrame]);
+    vkEndCommandBuffer(m_ctx.cmdBuffers[m_ctx.currentFrame]);
 
-    auto& sync = m_ctx.syncObjects[m_currentFrame];
+    auto& sync = m_ctx.syncObjects[m_ctx.currentFrame];
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -209,7 +209,7 @@ void VulkanRHI::endFrame() {
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_ctx.cmdBuffers[m_currentFrame];
+    submitInfo.pCommandBuffers = &m_ctx.cmdBuffers[m_ctx.currentFrame];
 
     VkSemaphore signalSemaphores[] = { sync.renderFinishedSemaphore };
     submitInfo.signalSemaphoreCount = 1;
@@ -227,7 +227,7 @@ void VulkanRHI::endFrame() {
 
     vkQueuePresentKHR(m_ctx.presentQueue, &presentInfo);
 
-    m_currentFrame = (m_currentFrame + 1) % m_ctx.maxFramesInFlight;
+    m_ctx.currentFrame = (m_ctx.currentFrame + 1) % m_ctx.maxFramesInFlight;
     glfwPollEvents();
     ENGINE_LOG_TRACE("VulkanRHI::End of frame");
 }
@@ -239,7 +239,7 @@ void VulkanRHI::clear() {
 /******** Draw ********/
 void VulkanRHI::draw(std::shared_ptr<Pipeline> pipeline, uint32_t count) {
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
-    vkCmdDrawIndexed(m_ctx.cmdBuffers[m_currentFrame], vulkanPipeline->getBindedNumberOfIndices(), count, 0, 0, 0);
+    vkCmdDrawIndexed(m_ctx.cmdBuffers[m_ctx.currentFrame], vulkanPipeline->getBindedNumberOfIndices(), count, 0, 0, 0);
 }
 
 /******** Buffer ********/
@@ -251,25 +251,32 @@ std::shared_ptr<Buffer> VulkanRHI::createBuffer(BufferDesc& desc) {
 void VulkanRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     ENGINE_LOG_TRACE("VulkanRHI::Binding vertex buffer...");
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
-
-    vulkanPipeline->setCmdBuffer(m_ctx.cmdBuffers[m_currentFrame]);
     vulkanPipeline->bindVertexBuffer(buffer);
 }
 
 void VulkanRHI::bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     ENGINE_LOG_TRACE("VulkanRHI::Binding instance buffer...");
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
-
-    vulkanPipeline->setCmdBuffer(m_ctx.cmdBuffers[m_currentFrame]);
     vulkanPipeline->bindInstanceBuffer(buffer);
 }
 
 void VulkanRHI::bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     ENGINE_LOG_TRACE("VulkanRHI::Binding index buffer...");
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
-
-    vulkanPipeline->setCmdBuffer(m_ctx.cmdBuffers[m_currentFrame]);
     vulkanPipeline->bindIndexBuffer(buffer);
+}
+
+/******** TEXTURE ********/
+std::shared_ptr<Texture> VulkanRHI::createTexture(const TextureDesc& desc) {
+    ENGINE_LOG_TRACE("VulkanRHI::Creating texture...");
+    return std::make_shared<VulkanTexture>(desc, m_ctx);
+}
+
+void VulkanRHI::bindTexture(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Texture> texture, uint32_t slot) {
+    ENGINE_LOG_TRACE("VulkanRHI::Binding texture...");
+    if (!pipeline || !texture) return;
+    VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline.get());
+    vulkanPipeline->bindTexture(texture, slot);
 }
 
 /******** PIPELINE/SHADER ********/
@@ -283,7 +290,7 @@ void VulkanRHI::bindPipeline(Pipeline *pipeline) {
     ENGINE_LOG_TRACE("VulkanRHI::Binding pipeline...");
     VulkanPipeline* vulkanPipeline = static_cast<VulkanPipeline*>(pipeline);
     m_currentPipeline = vulkanPipeline;
-    vkCmdBindPipeline(m_ctx.cmdBuffers[m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanPipeline->getPipeline());
+    vkCmdBindPipeline(m_ctx.cmdBuffers[m_ctx.currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, vulkanPipeline->getPipeline());
 }
 
 std::shared_ptr<Shader> VulkanRHI::createShader(ShaderType type, std::string source) {
@@ -292,35 +299,10 @@ std::shared_ptr<Shader> VulkanRHI::createShader(ShaderType type, std::string sou
 
 /******** Uniform ********/
 void VulkanRHI::setGlobalUniform(const void* data, size_t size) {
-    m_ctx.uniformBuffers[m_currentFrame]->setData(size, data, 0);
-    vkCmdBindDescriptorSets(m_ctx.cmdBuffers[m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_ctx.pipelineLayout, 0, 1, &m_ctx.descriptorSets[m_currentFrame], 0, nullptr);
+    m_ctx.uniformBuffers[m_ctx.currentFrame]->setData(size, data, 0);
+    vkCmdBindDescriptorSets(m_ctx.cmdBuffers[m_ctx.currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_ctx.pipelineLayout, 0, 1, &m_ctx.descriptorSets[m_ctx.currentFrame], 0, nullptr);
 }
 
 void VulkanRHI::setLocalUniform(const void* data, size_t size) {
-    vkCmdPushConstants(m_ctx.cmdBuffers[m_currentFrame], m_currentPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, (uint32_t)size, data);
-}
-
-/******** Utility ********/
-void VulkanRHI::transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess, VkImageAspectFlags aspectMask) {
-    VkImageMemoryBarrier2 barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    barrier.srcStageMask = srcStage;
-    barrier.srcAccessMask = srcAccess;
-    barrier.dstStageMask = dstStage;
-    barrier.dstAccessMask = dstAccess;
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
-    barrier.image = image;
-    barrier.subresourceRange.aspectMask = aspectMask;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-
-    VkDependencyInfo depInfo{};
-    depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    depInfo.imageMemoryBarrierCount = 1;
-    depInfo.pImageMemoryBarriers = &barrier;
-
-    vkCmdPipelineBarrier2(cmd, &depInfo);
+    vkCmdPushConstants(m_ctx.cmdBuffers[m_ctx.currentFrame], m_currentPipeline->getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, (uint32_t)size, data);
 }

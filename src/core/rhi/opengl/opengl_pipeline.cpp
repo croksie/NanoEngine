@@ -29,6 +29,7 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
 
     GLuint attribPos = 0;
     GLuint attribCol = 1;
+    GLuint attribTexCoord = 2;
 
     GLuint vaoBindingPoint = 0;
     ENGINE_LOG_TRACE("OpenGLRHI::Creating VAO...");
@@ -37,18 +38,21 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
         vaoBindingPoint,
         buffer->getBufferId(),
         0,
-        6*sizeof(float));
+        8*sizeof(float));
 
-    m_numberOfVerticlesInBindedObject = static_cast<GLsizei>(buffer->getSize() / (6 * sizeof(float)));
+    m_numberOfVerticlesInBindedObject = static_cast<GLsizei>(buffer->getSize() / (8 * sizeof(float)));
     ENGINE_LOG_TRACE("OpenGLRHI::VAO Created");
     glEnableVertexArrayAttrib(m_vertexArrayID, attribPos);
     glEnableVertexArrayAttrib(m_vertexArrayID, attribCol);
+    glEnableVertexArrayAttrib(m_vertexArrayID, attribTexCoord);
 
     glVertexArrayAttribFormat(m_vertexArrayID, attribPos, 3, GL_FLOAT, GL_FALSE, 0);
     glVertexArrayAttribFormat(m_vertexArrayID, attribCol, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
+    glVertexArrayAttribFormat(m_vertexArrayID, attribTexCoord, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
 
     glVertexArrayAttribBinding(m_vertexArrayID, attribPos, vaoBindingPoint);
     glVertexArrayAttribBinding(m_vertexArrayID, attribCol, vaoBindingPoint);
+    glVertexArrayAttribBinding(m_vertexArrayID, attribTexCoord, vaoBindingPoint);
 }
 
 void OpenGLPipeline::bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) {
@@ -71,7 +75,7 @@ void OpenGLPipeline::bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) 
     glVertexArrayBindingDivisor(m_vertexArrayID, vaoBindingPoint, 1);
 
     for (GLuint i = 0; i < 4; ++i) {
-        GLuint attribLocation = 2 + i;
+        GLuint attribLocation = 3 + i;
         glEnableVertexArrayAttrib(m_vertexArrayID, attribLocation);
         glVertexArrayAttribFormat(m_vertexArrayID, attribLocation, 4, GL_FLOAT, GL_FALSE, i * sizeof(glm::vec4));
         glVertexArrayAttribBinding(m_vertexArrayID, attribLocation, vaoBindingPoint);
@@ -89,4 +93,10 @@ void OpenGLPipeline::bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) {
 
     glVertexArrayElementBuffer(m_vertexArrayID, buffer->getBufferId());
     m_numberOfIndicesInBindedObject = static_cast<GLsizei>(buffer->getSize() / sizeof(uint32_t));
+}
+
+void OpenGLPipeline::bindTexture(std::shared_ptr<Texture> texture, uint32_t slot) {
+    ENGINE_LOG_TRACE("OpenGLRHI::Texture binding...");
+    OpenGLTexture* glTex = static_cast<OpenGLTexture*>(texture.get());
+    glBindTextureUnit(slot, glTex->getTextureID());
 }

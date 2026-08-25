@@ -1,7 +1,6 @@
 #include "core/rhi/opengl/opengl_rhi.h"
 
 #include "utils/log.h"
-#include "opengl_rhi.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -13,8 +12,12 @@ void OpenGLRHI::initialize(Window* window, std::shared_ptr<EngineConfig> config)
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, m_config->resizable);
     // TODO : implement fullscreen mode
+    #ifdef DEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    #endif
 
     m_window->initializeWindow(m_config->windowWidth, m_config->windowHeight, m_config->windowTitle.c_str());
     glfwMakeContextCurrent(static_cast<GLFWwindow*>(m_window->getNativeHandle()));
@@ -165,6 +168,25 @@ void OpenGLRHI::bindPipeline(Pipeline* pipeline) {
     GLuint shaderProgram = static_cast<OpenGLPipeline*>(pipeline)->getShaderProgramID();
     glUseProgram(shaderProgram); 
     ENGINE_LOG_TRACE("OpenGLRHI::Pipeline binded");
+}
+
+/******** Textures ********/
+std::shared_ptr<Texture> OpenGLRHI::createTexture(const TextureDesc& desc) {
+    ENGINE_LOG_TRACE("OpenGLRHI::Creating texture...");
+    return std::make_shared<OpenGLTexture>(desc);
+}
+
+void OpenGLRHI::bindTexture(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Texture> texture, uint32_t slot) {
+    if(pipeline == nullptr) {
+        ENGINE_LOG_CRITICAL("Pipeline is null");
+        throw std::runtime_error("Pipeline is null");
+    }
+    if(texture == nullptr) {
+        ENGINE_LOG_CRITICAL("Texture is null");
+        throw std::runtime_error("Texture is null");
+    }
+    pipeline->bindTexture(texture, slot);
+    ENGINE_LOG_TRACE("OpenGLRHI::Texture binded");
 }
 
 /******** Uniforms ********/

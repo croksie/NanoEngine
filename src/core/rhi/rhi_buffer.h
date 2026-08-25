@@ -5,6 +5,8 @@ enum class BufferType {
     VERTEX = 0,
     INDEX = 1,
     UNIFORM = 2,
+    STORAGE = 3,
+    TRANSFER = 4
 };
 
 struct BufferDesc {

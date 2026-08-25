@@ -28,6 +28,7 @@ struct VulkanContext {
           descriptorSets(maxFramesInFlight) {}
 
     uint32_t maxFramesInFlight = 3;
+    uint32_t currentFrame = 0;
 
     VkInstance instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
@@ -89,5 +90,11 @@ void cleanupDepthBuffer(VulkanContext& ctx);
 
 // Utility
 uint32_t findMemoryType(const VulkanContext& ctx, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+VkCommandBuffer beginSingleTimeCommands(const VulkanContext& ctx);
+void endSingleTimeCommands(const VulkanContext& ctx, VkCommandBuffer commandBuffer);
+void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+                           VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess,
+                           VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess,
+                           VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 
 }

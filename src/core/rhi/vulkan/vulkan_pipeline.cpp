@@ -22,18 +22,19 @@ VulkanPipeline::VulkanPipeline(PipelineInfo& info, vulkan::VulkanContext& ctx, V
 
     // Binding 0 : Vertex
     bindingDescs.push_back({0, VERTICLE_SIZE, VK_VERTEX_INPUT_RATE_VERTEX});
-    // Vertex Attributes (Position & Color)
+    // Vertex Attributes (Position, Color, TexCoord)
     attribDescs.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
     attribDescs.push_back({1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)});
+    attribDescs.push_back({2, 0, VK_FORMAT_R32G32_SFLOAT, 6 * sizeof(float)});
     if (info.useInstance) {
         m_useInstance = true;
         // Binding 1 : Instance
         bindingDescs.push_back({1, sizeof(InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE});
         // Instance Attributes (Matrix)
-        attribDescs.push_back({2, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 0});
-        attribDescs.push_back({3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 4});
-        attribDescs.push_back({4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 8});
-        attribDescs.push_back({5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 12});
+        attribDescs.push_back({3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 0});
+        attribDescs.push_back({4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 4});
+        attribDescs.push_back({5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 8});
+        attribDescs.push_back({6, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 12});
     }
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -137,9 +138,9 @@ VulkanPipeline::~VulkanPipeline() {
 void VulkanPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) {
     VulkanBuffer* vulkanVertexBuffer = static_cast<VulkanBuffer*>(vertexBuffer.get());
 
-    vkCmdBindPipeline(m_cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+    vkCmdBindPipeline(m_ctx->cmdBuffers[m_ctx->currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1, vulkanVertexBuffer->getBufferHandle(), offsets);
+    vkCmdBindVertexBuffers(m_ctx->cmdBuffers[m_ctx->currentFrame], 0, 1, vulkanVertexBuffer->getBufferHandle(), offsets);
 
     m_numberOfVerticlesInBindedObject = static_cast<uint32_t>(vulkanVertexBuffer->getSize() / VERTICLE_SIZE); // TODO: 
 }
@@ -151,12 +152,36 @@ void VulkanPipeline::bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) 
     }
     VulkanBuffer* vulkanInstanceBuffer = static_cast<VulkanBuffer*>(instanceBuffer.get());
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(m_cmdBuffer, 1, 1, vulkanInstanceBuffer->getBufferHandle(), offsets);
+    vkCmdBindVertexBuffers(m_ctx->cmdBuffers[m_ctx->currentFrame], 1, 1, vulkanInstanceBuffer->getBufferHandle(), offsets);
 }
 
 
 void VulkanPipeline::bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) {
     VulkanBuffer* vulkanIndexBuffer = static_cast<VulkanBuffer*>(indexBuffer.get());
-    vkCmdBindIndexBuffer(m_cmdBuffer, *vulkanIndexBuffer->getBufferHandle(), 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindIndexBuffer(m_ctx->cmdBuffers[m_ctx->currentFrame], *vulkanIndexBuffer->getBufferHandle(), 0, VK_INDEX_TYPE_UINT32);
     m_numberOfIndicesInBindedObject = static_cast<uint32_t>(vulkanIndexBuffer->getSize() / sizeof(uint32_t));
 }
+
+void VulkanPipeline::bindTexture(std::shared_ptr<Texture> texture, uint32_t slot) {
+    ENGINE_LOG_TRACE("VulkanPipeline::Binding texture...");
+    if (!texture) return;
+    VulkanTexture* vulkanTex = static_cast<VulkanTexture*>(texture.get());
+
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = vulkanTex->getImageView();
+    imageInfo.sampler = vulkanTex->getSampler();
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = m_ctx->descriptorSets[m_ctx->currentFrame];
+    descriptorWrite.dstBinding = slot;
+    descriptorWrite.dstArrayElement = 0;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pImageInfo = &imageInfo;
+
+    vkUpdateDescriptorSets(m_ctx->device, 1, &descriptorWrite, 0, nullptr);
+    vkCmdBindDescriptorSets(m_ctx->cmdBuffers[m_ctx->currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &m_ctx->descriptorSets[m_ctx->currentFrame], 0, nullptr);
+}
+

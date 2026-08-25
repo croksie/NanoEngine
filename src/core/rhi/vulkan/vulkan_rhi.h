@@ -5,6 +5,7 @@
 #include "core/rhi/vulkan/vulkan_initializer.h"
 #include "core/rhi/vulkan/vulkan_buffer.h"
 #include "core/rhi/vulkan/vulkan_pipeline.h"
+#include "core/rhi/vulkan/vulkan_texture.h"
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
@@ -32,11 +33,13 @@ public:
     std::shared_ptr<Shader> createShader(ShaderType type, std::string source) override;
     std::shared_ptr<Buffer> createBuffer(BufferDesc& desc) override;
     std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) override;
+    std::shared_ptr<Texture> createTexture(const TextureDesc& desc) override;
 
     void bindPipeline(Pipeline* pipeline) override;
     void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
     void bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
     void bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
+    void bindTexture(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Texture> texture, uint32_t slot = 0) override;
 
     void setGlobalUniform(const void* data, size_t size) override;
     void setLocalUniform(const void* data, size_t size) override;
@@ -47,7 +50,6 @@ private:
     std::shared_ptr<EngineConfig> m_config;
 
     vulkan::VulkanContext m_ctx{};
-    uint32_t m_currentFrame = 0;
     uint32_t m_imageIndex = 0;
 
     VulkanPipeline* m_currentPipeline = nullptr;
@@ -56,6 +58,4 @@ private:
     bool m_framebufferResized = false;
     uint32_t m_width;
     uint32_t m_height;
-
-    void transitionImageLayout(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkPipelineStageFlags2 srcStage, VkAccessFlags2 srcAccess, VkPipelineStageFlags2 dstStage, VkAccessFlags2 dstAccess, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 };

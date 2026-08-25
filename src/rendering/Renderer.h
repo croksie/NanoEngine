@@ -11,9 +11,6 @@
 #include <memory>
 #include <vector>
 
-
-#include <vulkan/vulkan.h> //To suppress
-
 class Renderer {
 public:
     void initialize(Window* window, std::shared_ptr<EngineConfig> config);
@@ -29,5 +26,6 @@ private:
 
     std::vector<InstanceData> m_instances = std::vector<InstanceData>(900);
     std::shared_ptr<Buffer> m_instanceBuffer;
+    std::shared_ptr<Texture> m_texture;
     void createTestModel();
 };

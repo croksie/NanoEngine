@@ -2,6 +2,7 @@
 #include "core/rhi/rhi.h"
 #include "core/rhi/rhi_pipeline.h"
 #include "core/rhi/vulkan/vulkan_shader.h"
+#include "core/rhi/vulkan/vulkan_texture.h"
 
 #include <glm/glm.hpp>
 
@@ -11,7 +12,7 @@ namespace vulkan {
     struct VulkanContext;
 }
 
-constexpr int VERTICLE_SIZE = 6 * sizeof(float);
+constexpr int VERTICLE_SIZE = 8 * sizeof(float);
 
 
 class VulkanPipeline : public Pipeline {
@@ -20,12 +21,10 @@ public:
     VulkanPipeline(PipelineInfo& info, vulkan::VulkanContext& ctx, VkPipelineLayout pipelineLayout);
     ~VulkanPipeline();
 
-
-    void setCmdBuffer(VkCommandBuffer cmdBuffer) { m_cmdBuffer = cmdBuffer; }
-
     void bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) override;
     void bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) override;
     void bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) override;
+    void bindTexture(std::shared_ptr<Texture> texture, uint32_t slot = 0) override;
 
 
     VkPipeline getPipeline() { return m_pipeline; }
@@ -41,7 +40,6 @@ private:
 
     VkPipeline m_pipeline;
     VkPipelineLayout m_pipelineLayout;
-    VkCommandBuffer m_cmdBuffer;
 
     uint32_t m_numberOfVerticlesInBindedObject = 0;
     uint32_t m_numberOfIndicesInBindedObject = 0;

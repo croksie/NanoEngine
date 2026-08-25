@@ -1,5 +1,8 @@
 #include "rendering/renderer.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "utils/log.h"
 
 #include <glm/glm.hpp>
@@ -13,10 +16,11 @@ std::string vertexShaderSource = R"(
 #version 450 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aCol;
-
-layout (location = 2) in mat4 aInstanceModel; 
+layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in mat4 aInstanceModel; 
 
 layout (location = 0) out vec3 ourColor;
+layout (location = 1) out vec2 TexCoord;
 
 layout (std140, binding = 0) uniform GlobalData {
     mat4 view;
@@ -26,49 +30,53 @@ layout (std140, binding = 0) uniform GlobalData {
 void main() {
     gl_Position = u_Global.projection * u_Global.view * aInstanceModel * vec4(aPos, 1.0);
     ourColor = aCol;
+    TexCoord = aTexCoord;
 }
 )";
 
 std::string fragmentShaderSource = R"(
 #version 450 core
 layout (location = 0) in vec3 ourColor;
+layout (location = 1) in vec2 TexCoord;
 layout (location = 0) out vec4 FragColor;
+
+layout (binding = 1) uniform sampler2D u_Texture;
 void main() {
-    FragColor = vec4(ourColor, 1.0f);
+    FragColor = texture(u_Texture, TexCoord) * vec4(ourColor, 1.0);
 })";
 
 
 float vertices[] = {
     // Face Front
-    -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     0.0f, 1.0f,
     // Face Back
-     0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     0.0f, 1.0f,
     // Face Left
-    -0.5f, -0.5f, -0.5f,         0.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,         0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,         0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,         0.0f, 0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,         0.0f, 0.0f, 1.0f,     0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,         0.0f, 0.0f, 1.0f,     1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,         0.0f, 0.0f, 1.0f,     1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,         0.0f, 0.0f, 1.0f,     0.0f, 1.0f,
     // Face Right
-     0.5f, -0.5f,  0.5f,         1.0f, 1.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,         1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,         1.0f, 1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,         1.0f, 1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,         1.0f, 1.0f, 0.0f,     0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,         1.0f, 1.0f, 0.0f,     1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,         1.0f, 1.0f, 0.0f,     1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,         1.0f, 1.0f, 0.0f,     0.0f, 1.0f,
     // Face Up
-    -0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,     0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,     1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,     1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,     0.0f, 1.0f,
     // Face Down
-    -0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f
+    -0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,     0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,     1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,     1.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,     0.0f, 1.0f
 };
 
 uint32_t indices[] = {
@@ -96,6 +104,28 @@ uint32_t indices[] = {
 
 
 void Renderer::createTestModel(){
+    // Create texture
+    int width = 0, height = 0, nrChannels = 0;
+    unsigned char *data = stbi_load("../../src/assets/textures/wall.jpg", &width, &height, &nrChannels, STBI_rgb_alpha);
+    if (!data) {
+        ENGINE_LOG_ERROR("Renderer::createTestModel: Failed to load texture '../../src/assets/textures/wall.jpg'");
+    } else {
+        ENGINE_LOG_INFO("Renderer::createTestModel: Loaded texture ({}x{}, channels: {})", width, height, nrChannels);
+    }
+
+    TextureDesc texDesc{};
+    texDesc.width = static_cast<uint32_t>(width);
+    texDesc.height = static_cast<uint32_t>(height);
+    texDesc.format = TextureFormat::RGBA8_SRGB;
+    texDesc.initialData = data;
+    texDesc.size = width * height * 4;
+
+    m_texture = m_rhi->createTexture(texDesc);
+
+    if (data) {
+        stbi_image_free(data);
+    }
+
     // Create pipeline
     PipelineInfo info;
     info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, vertexShaderSource);
@@ -209,6 +239,7 @@ void Renderer::render() {
         m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
         m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
         m_rhi->bindInstanceBuffer(material->getPipeline(), m_instanceBuffer);
+        m_rhi->bindTexture(material->getPipeline(), m_texture, 1);
         m_rhi->draw(material->getPipeline(), 900);
     //}
 
@@ -221,5 +252,6 @@ void Renderer::shutdown()
     ENGINE_LOG_DEBUG("Renderer shutting down ...");
     models.clear();
     m_instanceBuffer = nullptr;
+    m_texture = nullptr;
     m_rhi->shutdown(); // Ensure to have free all buffer and pipeline before
 }
