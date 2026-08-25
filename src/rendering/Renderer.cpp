@@ -14,8 +14,8 @@
 
 std::string assetFolder = "../../assets/";
 
-std::string vertexShaderSource = fileUtils::readTextFile(assetFolder + "sharders/base.vert");
-std::string fragmentShaderSource = fileUtils::readTextFile(assetFolder + "sharders/base.frag");
+std::string vertexShaderSource = fileUtils::readTextFile(assetFolder + "shaders/base.vert");
+std::string fragmentShaderSource = fileUtils::readTextFile(assetFolder + "shaders/base.frag");
 
 
 float vertices[] = {
