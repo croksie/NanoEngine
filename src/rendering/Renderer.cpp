@@ -4,6 +4,7 @@
 #include <stb_image.h>
 
 #include "utils/log.h"
+#include "utils/file_utils.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,39 +12,10 @@
 
 #include <string>
 
+std::string assetFolder = "../../assets/";
 
-std::string vertexShaderSource = R"(
-#version 450 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aCol;
-layout (location = 2) in vec2 aTexCoord;
-layout (location = 3) in mat4 aInstanceModel; 
-
-layout (location = 0) out vec3 ourColor;
-layout (location = 1) out vec2 TexCoord;
-
-layout (std140, binding = 0) uniform GlobalData {
-    mat4 view;
-    mat4 projection;
-} u_Global;
-
-void main() {
-    gl_Position = u_Global.projection * u_Global.view * aInstanceModel * vec4(aPos, 1.0);
-    ourColor = aCol;
-    TexCoord = aTexCoord;
-}
-)";
-
-std::string fragmentShaderSource = R"(
-#version 450 core
-layout (location = 0) in vec3 ourColor;
-layout (location = 1) in vec2 TexCoord;
-layout (location = 0) out vec4 FragColor;
-
-layout (binding = 1) uniform sampler2D u_Texture;
-void main() {
-    FragColor = texture(u_Texture, TexCoord) * vec4(ourColor, 1.0);
-})";
+std::string vertexShaderSource = fileUtils::readTextFile(assetFolder + "sharders/base.vert");
+std::string fragmentShaderSource = fileUtils::readTextFile(assetFolder + "sharders/base.frag");
 
 
 float vertices[] = {
@@ -106,9 +78,9 @@ uint32_t indices[] = {
 void Renderer::createTestModel(){
     // Create texture
     int width = 0, height = 0, nrChannels = 0;
-    unsigned char *data = stbi_load("../../assets/textures/wall.jpg", &width, &height, &nrChannels, STBI_rgb_alpha);
+    unsigned char *data = stbi_load((assetFolder + "textures/wall.jpg").c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
     if (!data) {
-        ENGINE_LOG_ERROR("Renderer::createTestModel: Failed to load texture '../../assets/textures/wall.jpg'");
+        ENGINE_LOG_ERROR("Renderer::createTestModel: Failed to load texture '{}'", assetFolder + "textures/wall.jpg");
     } else {
         ENGINE_LOG_INFO("Renderer::createTestModel: Loaded texture ({}x{}, channels: {})", width, height, nrChannels);
     }
