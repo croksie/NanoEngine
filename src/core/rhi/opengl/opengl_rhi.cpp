@@ -98,19 +98,11 @@ void OpenGLRHI::clear() {
 
 
 /******** BUFFER ********/
-
-/// @brief Create an OpenGl VBO
-/// @param vertices An array of flaot with all the verticles
-/// @param size The size of the array
-/// @return An abstarct class buffer who contains an OpenGl Buffer
 std::shared_ptr<Buffer> OpenGLRHI::createBuffer(BufferDesc& desc) {
     ENGINE_LOG_TRACE("OpenGLRHI::Creating buffer...");
     return std::make_shared<OpenGLBuffer>(desc);
 }
 
-/// @brief Bind a VBO to a VAO
-/// @param pipeline The abstarction that contains the VAO
-/// @param buffer The abstarction that contains the VBO
 void OpenGLRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     if(pipeline == nullptr) {
         ENGINE_LOG_CRITICAL("Pipeline is null");
@@ -122,6 +114,19 @@ void OpenGLRHI::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared
     }
     pipeline->bindVertexBuffer(buffer);
     ENGINE_LOG_TRACE("OpenGLRHI::Vertex buffer binded");
+}
+
+void OpenGLRHI::bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
+    if(pipeline == nullptr) {
+        ENGINE_LOG_CRITICAL("Pipeline is null");
+        throw std::runtime_error("Pipeline is null");
+    }
+    if(buffer == nullptr) {
+        ENGINE_LOG_CRITICAL("Buffer is null");
+        throw std::runtime_error("Buffer is null");
+    }
+    pipeline->bindInstanceBuffer(buffer);
+    ENGINE_LOG_TRACE("OpenGLRHI::Instance buffer binded");
 }
 
 void OpenGLRHI::bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
@@ -170,16 +175,17 @@ void OpenGLRHI::setGlobalUniform(const void *data, size_t size) {
 }
 
 void OpenGLRHI::setLocalUniform(const void *data, size_t size) {
+    (void)size;
     glUniformMatrix4fv(0 , 1, GL_FALSE, reinterpret_cast<const GLfloat*>(data));
 }
 
 /******** Draw ********/
 
-void OpenGLRHI::draw(std::shared_ptr<Pipeline> pipeline) {
+void OpenGLRHI::draw(std::shared_ptr<Pipeline> pipeline, uint32_t count) {
     ENGINE_LOG_TRACE("OpenGLRHI::Drawing...");
     OpenGLPipeline* openGlPipeline = static_cast<OpenGLPipeline*>(pipeline.get());
     
     glBindVertexArray(openGlPipeline->getVertexArrayID());
-    glDrawElements(GL_TRIANGLES, openGlPipeline->getBindedNumberOfIndices(), GL_UNSIGNED_INT, nullptr);
+    glDrawElementsInstanced(GL_TRIANGLES, openGlPipeline->getBindedNumberOfIndices(), GL_UNSIGNED_INT, nullptr, count);
     ENGINE_LOG_TRACE("OpenGLRHI::Drawed");
 }

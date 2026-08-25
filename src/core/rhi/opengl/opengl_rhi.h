@@ -19,13 +19,14 @@ public:
     void endFrame() override;
 
     void clear() override;
-    void draw(std::shared_ptr<Pipeline> pipeline) override;
+    void draw(std::shared_ptr<Pipeline> pipeline, uint32_t count) override;
 
     std::shared_ptr<Shader> createShader(ShaderType type, std::string source) override;
     std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) override;
     std::shared_ptr<Buffer> createBuffer(BufferDesc& desc) override;
 
     void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
+    void bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
     void bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) override;
     void bindPipeline(Pipeline* pipeline) override;
 

@@ -5,10 +5,16 @@
 #include "core/rhi/rhi_pipeline.h"
 #include "core/rhi/rhi_shader.h"
 
+#include "glm/glm.hpp"
+
 #include <stddef.h>
 
 #include <memory>
 #include <string>
+
+struct InstanceData {
+    glm::mat4 modelMatrix;
+};
 
 class RHI{
 
@@ -19,7 +25,7 @@ public:
     virtual void endFrame() = 0;
 
     virtual void clear() = 0;
-    virtual void draw(std::shared_ptr<Pipeline> pipeline) = 0;
+    virtual void draw(std::shared_ptr<Pipeline> pipeline, uint32_t count = 1) = 0;
 
     virtual std::shared_ptr<Shader> createShader(ShaderType type, std::string source) = 0;
     virtual std::shared_ptr<Pipeline> createPipeline(PipelineInfo& info) = 0;
@@ -27,6 +33,7 @@ public:
 
     virtual void bindPipeline(Pipeline* pipeline) = 0;
     virtual void bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) = 0;
+    virtual void bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) = 0;
     virtual void bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) = 0;
 
     virtual void setGlobalUniform(const void* data, size_t size) = 0;

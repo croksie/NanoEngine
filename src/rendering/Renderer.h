@@ -27,6 +27,7 @@ private:
 
     std::vector<Model> models;
 
+    std::vector<InstanceData> m_instances = std::vector<InstanceData>(900);
+    std::shared_ptr<Buffer> m_instanceBuffer;
     void createTestModel();
-
 };

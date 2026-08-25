@@ -1,4 +1,5 @@
 #pragma once
+#include "core/rhi/rhi.h"
 #include "core/rhi/rhi_pipeline.h"
 #include "core/rhi/vulkan/vulkan_shader.h"
 
@@ -23,6 +24,7 @@ public:
     void setCmdBuffer(VkCommandBuffer cmdBuffer) { m_cmdBuffer = cmdBuffer; }
 
     void bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) override;
+    void bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) override;
     void bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) override;
 
 
@@ -34,6 +36,8 @@ public:
 
 private:
     vulkan::VulkanContext* m_ctx;
+
+    bool m_useInstance = false;
 
     VkPipeline m_pipeline;
     VkPipelineLayout m_pipelineLayout;

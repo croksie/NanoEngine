@@ -16,31 +16,32 @@ VulkanPipeline::VulkanPipeline(PipelineInfo& info, vulkan::VulkanContext& ctx, V
         fragShader->getStageCreateInfo()
     };
 
-    // Vertex Input Layout
-    // Current Format : pos = 3 floa + col = 3 float
-    VkVertexInputBindingDescription bindingDesc{};
-    bindingDesc.binding = 0;
-    bindingDesc.stride = VERTICLE_SIZE;
-    bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    // VertexDescription
+    std::vector<VkVertexInputBindingDescription> bindingDescs;
+    std::vector<VkVertexInputAttributeDescription> attribDescs;
 
-    VkVertexInputAttributeDescription attribDesc[2]{};
-    // Position (loc 0)
-    attribDesc[0].binding = 0;
-    attribDesc[0].location = 0;
-    attribDesc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attribDesc[0].offset = 0;
-    // Color (loc 1)
-    attribDesc[1].binding = 0;
-    attribDesc[1].location = 1;
-    attribDesc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attribDesc[1].offset = 3 * sizeof(float);
+    // Binding 0 : Vertex
+    bindingDescs.push_back({0, VERTICLE_SIZE, VK_VERTEX_INPUT_RATE_VERTEX});
+    // Vertex Attributes (Position & Color)
+    attribDescs.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
+    attribDescs.push_back({1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)});
+    if (info.useInstance) {
+        m_useInstance = true;
+        // Binding 1 : Instance
+        bindingDescs.push_back({1, sizeof(InstanceData), VK_VERTEX_INPUT_RATE_INSTANCE});
+        // Instance Attributes (Matrix)
+        attribDescs.push_back({2, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 0});
+        attribDescs.push_back({3, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 4});
+        attribDescs.push_back({4, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 8});
+        attribDescs.push_back({5, 1, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 12});
+    }
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
-    vertexInputInfo.vertexAttributeDescriptionCount = 2;
-    vertexInputInfo.pVertexAttributeDescriptions = attribDesc;
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescs.size());
+    vertexInputInfo.pVertexBindingDescriptions = bindingDescs.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribDescs.size());
+    vertexInputInfo.pVertexAttributeDescriptions = attribDescs.data();
 
     // Input Assembly
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -141,8 +142,18 @@ void VulkanPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) {
     vkCmdBindVertexBuffers(m_cmdBuffer, 0, 1, vulkanVertexBuffer->getBufferHandle(), offsets);
 
     m_numberOfVerticlesInBindedObject = static_cast<uint32_t>(vulkanVertexBuffer->getSize() / VERTICLE_SIZE); // TODO: 
-
 }
+
+void VulkanPipeline::bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) {
+    if(!m_useInstance){
+        ENGINE_LOG_ERROR("VulkanPipeline::Pipeline isn't created with instance support");
+        return;
+    }
+    VulkanBuffer* vulkanInstanceBuffer = static_cast<VulkanBuffer*>(instanceBuffer.get());
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(m_cmdBuffer, 1, 1, vulkanInstanceBuffer->getBufferHandle(), offsets);
+}
+
 
 void VulkanPipeline::bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) {
     VulkanBuffer* vulkanIndexBuffer = static_cast<VulkanBuffer*>(indexBuffer.get());

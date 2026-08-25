@@ -9,10 +9,12 @@
 #include <string>
 
 
-std::string vulkaVertexShaderSource = R"(
+std::string vertexShaderSource = R"(
 #version 450 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aCol;
+
+layout (location = 2) in mat4 aInstanceModel; 
 
 layout (location = 0) out vec3 ourColor;
 
@@ -21,35 +23,12 @@ layout (std140, binding = 0) uniform GlobalData {
     mat4 projection;
 } u_Global;
 
-layout (push_constant) uniform PushConstants {
-    mat4 model;
-} u_Object;
-
 void main() {
-    gl_Position = u_Global.projection * u_Global.view * u_Object.model * vec4(aPos, 1.0);
+    gl_Position = u_Global.projection * u_Global.view * aInstanceModel * vec4(aPos, 1.0);
     ourColor = aCol;
 }
 )";
 
-std::string openglVertexShaderSource = R"(
-#version 450 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aCol;
-
-layout (location = 0) out vec3 ourColor;
-
-layout (std140, binding = 0) uniform GlobalData {
-    mat4 view;
-    mat4 projection;
-} u_Global;
-
-layout (location = 0) uniform mat4 u_Model;
-
-void main() {
-    gl_Position = u_Global.projection * u_Global.view * u_Model * vec4(aPos, 1.0);
-    ourColor = aCol;
-}
-)";
 std::string fragmentShaderSource = R"(
 #version 450 core
 layout (location = 0) in vec3 ourColor;
@@ -119,13 +98,10 @@ uint32_t indices[] = {
 void Renderer::createTestModel(){
     // Create pipeline
     PipelineInfo info;
-    if(m_config->api == GraphicsAPI::OpenGL) {
-        info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, openglVertexShaderSource);
-    }
-    else {
-        info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, vulkaVertexShaderSource);
-    }
+    info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, vertexShaderSource);
+
     info.fragmentShader = m_rhi->createShader(ShaderType::FRAGMENT, fragmentShaderSource);
+    info.useInstance = true;
 
     Material mat = Material(m_rhi->createPipeline(info));
     ENGINE_LOG_DEBUG("Is pipeline valid ? : {}", mat.getPipeline() != nullptr ? "true" : "false");
@@ -151,6 +127,28 @@ void Renderer::createTestModel(){
             models.push_back(model);
         }
     }
+
+    const float time = static_cast<float>(glfwGetTime());
+    const glm::mat4 baseRotation = glm::rotate(
+        glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+        time * glm::radians(50.0f),
+        glm::vec3(0.5f, 1.0f, 0.0f)
+    );
+
+    for (size_t i = 0; i < models.size(); ++i) {
+        glm::mat4 modelMat = baseRotation;
+        modelMat[3] = glm::vec4(static_cast<glm::vec3>(models[i].getPosition()), 1.0f);
+        m_instances[i].modelMatrix = modelMat;
+    }
+
+    BufferDesc desc{};
+    desc.size = m_instances.size() * sizeof(InstanceData);
+    desc.type = BufferType::VERTEX;
+    desc.initData = m_instances.data();
+
+    m_instanceBuffer = m_rhi->createBuffer(desc);
+
+
 }
 
 void Renderer::initialize(Window* window, std::shared_ptr<EngineConfig> config) {
@@ -186,24 +184,33 @@ void Renderer::render() {
     m_rhi->clear();
     m_rhi->setGlobalUniform(data, sizeof(matrices));
 
+    const float time = static_cast<float>(glfwGetTime());
+    const glm::mat4 baseRotation = glm::rotate(
+        glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+        time * glm::radians(50.0f),
+        glm::vec3(0.5f, 1.0f, 0.0f)
+    );
+
+    for (size_t i = 0; i < models.size(); ++i) {
+        glm::mat4 modelMat = baseRotation;
+        modelMat[3] = glm::vec4(static_cast<glm::vec3>(models[i].getPosition()), 1.0f);
+        m_instances[i].modelMatrix = modelMat;
+    }
+
+    m_instanceBuffer->setData(m_instances.size() * sizeof(InstanceData), m_instances.data());
 
 
 
-    for (auto& model : models) {
-        glm::mat4 modelMat = glm::mat4(1.0f);
-        modelMat = glm::translate(modelMat, (glm::vec3)model.getPosition());
-        modelMat = glm::rotate(modelMat, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
-        modelMat = glm::rotate(modelMat, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        
-        std::shared_ptr<Mesh> mesh = model.getMesh();
-        std::shared_ptr<Material> material = model.getMaterial();
+    //for (auto& model : models) {
+        std::shared_ptr<Mesh> mesh = models[0].getMesh();
+        std::shared_ptr<Material> material = models[0].getMaterial();
 
         m_rhi->bindPipeline(material->getPipeline().get());
         m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
         m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
-        m_rhi->setLocalUniform(glm::value_ptr(modelMat), sizeof(modelMat));
-        m_rhi->draw(material->getPipeline());
-    }
+        m_rhi->bindInstanceBuffer(material->getPipeline(), m_instanceBuffer);
+        m_rhi->draw(material->getPipeline(), 900);
+    //}
 
     m_rhi->endFrame();
     ENGINE_LOG_TRACE("Render end");
@@ -213,6 +220,6 @@ void Renderer::shutdown()
 {
     ENGINE_LOG_DEBUG("Renderer shutting down ...");
     models.clear();
-    m_rhi->shutdown();
-
+    m_instanceBuffer = nullptr;
+    m_rhi->shutdown(); // Ensure to have free all buffer and pipeline before
 }

@@ -51,6 +51,33 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer){
     glVertexArrayAttribBinding(m_vertexArrayID, attribCol, vaoBindingPoint);
 }
 
+void OpenGLPipeline::bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) {
+    ENGINE_LOG_TRACE("OpenGLRHI::Instance buffer binding...");
+    OpenGLBuffer* buffer = static_cast<OpenGLBuffer*>(instanceBuffer.get());
+
+    if(buffer->getType() != BufferType::VERTEX) {
+        ENGINE_LOG_ERROR("OpenGLRHI::Buffer is not of type VERTEX");
+        return;
+    }
+
+    GLuint vaoBindingPoint = 1;
+    glVertexArrayVertexBuffer(
+        m_vertexArrayID,
+        vaoBindingPoint,
+        buffer->getBufferId(),
+        0,
+        sizeof(InstanceData));
+
+    glVertexArrayBindingDivisor(m_vertexArrayID, vaoBindingPoint, 1);
+
+    for (GLuint i = 0; i < 4; ++i) {
+        GLuint attribLocation = 2 + i;
+        glEnableVertexArrayAttrib(m_vertexArrayID, attribLocation);
+        glVertexArrayAttribFormat(m_vertexArrayID, attribLocation, 4, GL_FLOAT, GL_FALSE, i * sizeof(glm::vec4));
+        glVertexArrayAttribBinding(m_vertexArrayID, attribLocation, vaoBindingPoint);
+    }
+}
+
 void OpenGLPipeline::bindIndexBuffer(std::shared_ptr<Buffer> indexBuffer) {
     ENGINE_LOG_TRACE("OpenGLRHI::Index buffer binding...");
     OpenGLBuffer* buffer = static_cast<OpenGLBuffer*>(indexBuffer.get());
