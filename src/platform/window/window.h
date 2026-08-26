@@ -1,8 +1,9 @@
 #pragma once
 
-#define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#include "platform/input/input.h"
 
 #include <functional>
 
@@ -16,6 +17,7 @@ public:
 
     void* getNativeHandle() const { return static_cast<void*>(m_window); }
     bool windowSouldClose() const { return glfwWindowShouldClose(m_window); }
+    void setCursorMode(bool disabled);
 
     Window();
     ~Window();

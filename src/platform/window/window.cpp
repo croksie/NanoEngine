@@ -32,6 +32,15 @@ void Window::initializeWindow(const int width, const int height, const char * ti
     }
     
     ENGINE_LOG_DEBUG("Window created");
+
+    glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    Input::init(m_window);
+}
+
+void Window::setCursorMode(bool disabled) {
+    if (m_window) {
+        glfwSetInputMode(m_window, GLFW_CURSOR, disabled ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    }
 }
 
 
