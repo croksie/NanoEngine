@@ -7,6 +7,7 @@
 #include "ressources/mesh.h"
 #include "ressources/material.h"
 #include "scene/model.h"
+#include "scene/camera.h"
 
 #include <memory>
 #include <vector>
@@ -21,6 +22,8 @@ public:
 private:
     std::shared_ptr<EngineConfig> m_config;
     std::unique_ptr<RHI> m_rhi;
+
+    Camera m_camera;
 
     std::vector<Model> models;
 

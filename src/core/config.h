@@ -21,3 +21,9 @@ struct EngineConfig {
     bool vsync = true;
     uint32_t maxFramesInFlight = 3;
 };
+
+struct CameraConfig {
+    float widthResolution = 1280.0f;
+    float heightResolution = 720.0f;
+    float fov = 90.0f;
+};

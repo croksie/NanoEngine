@@ -164,20 +164,17 @@ void Renderer::initialize(Window* window, std::shared_ptr<EngineConfig> config) 
     }
     m_rhi->initialize(window, m_config);
 
+    CameraConfig cameraConfig{};
+    m_camera = Camera(cameraConfig);
     createTestModel();
 
     ENGINE_LOG_INFO("Renderer initialized");
 }
 
 void Renderer::render() {
-    // View matrix
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f)); 
-    //Projection matrix
-    glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 100.0f);
 
-    glm::mat4 matrices[2] = {view, projection};
+
+    glm::mat4 matrices[2] = {m_camera.getViewMatrix(), m_camera.getProjectionMatrix()};
     const void* data = matrices;
 
 
