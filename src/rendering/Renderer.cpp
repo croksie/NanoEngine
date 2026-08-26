@@ -173,6 +173,32 @@ void Renderer::initialize(Window* window, std::shared_ptr<EngineConfig> config) 
 
 void Renderer::render() {
 
+    // Delta time calculation
+    const float currentTime = static_cast<float>(glfwGetTime());
+    const float deltaTime = (m_lastFrameTime > 0.0f) ? (currentTime - m_lastFrameTime) : 0.016f;
+    m_lastFrameTime = currentTime;
+
+    // Mouse Look
+    double mouseX, mouseY;
+    Input::getMousePosition(mouseX, mouseY);
+    if (m_firstMouse) {
+        m_lastMouseX = mouseX;
+        m_lastMouseY = mouseY;
+        m_firstMouse = false;
+    }
+    float xOffset = static_cast<float>(mouseX - m_lastMouseX);
+    float yOffset = static_cast<float>(m_lastMouseY - mouseY); // Inverted since Y goes downwards
+    m_lastMouseX = mouseX;
+    m_lastMouseY = mouseY;
+
+    m_camera.processMouseMovement(xOffset, yOffset);
+
+    // Keyboard Movement
+    if (Input::isKeyPressed(KeyCode::Z)) m_camera.processKeyboard(m_camera.getFront(), deltaTime);
+    if (Input::isKeyPressed(KeyCode::S)) m_camera.processKeyboard(-m_camera.getFront(), deltaTime);
+    if (Input::isKeyPressed(KeyCode::Q)) m_camera.processKeyboard(-m_camera.getRight(), deltaTime);
+    if (Input::isKeyPressed(KeyCode::D)) m_camera.processKeyboard(m_camera.getRight(), deltaTime);
+    if (Input::isKeyPressed(KeyCode::Space)) m_camera.processKeyboard(Vec3(0.0f, 1.0f, 0.0f), deltaTime);
 
     glm::mat4 matrices[2] = {m_camera.getViewMatrix(), m_camera.getProjectionMatrix()};
     const void* data = matrices;

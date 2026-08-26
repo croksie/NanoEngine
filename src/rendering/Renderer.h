@@ -8,6 +8,7 @@
 #include "ressources/material.h"
 #include "scene/model.h"
 #include "scene/camera.h"
+#include "platform/input/input.h"
 
 #include <memory>
 #include <vector>
@@ -31,4 +32,9 @@ private:
     std::shared_ptr<Buffer> m_instanceBuffer;
     std::shared_ptr<Texture> m_texture;
     void createTestModel();
+
+    float m_lastFrameTime = 0.0f;
+    double m_lastMouseX = 0.0;
+    double m_lastMouseY = 0.0;
+    bool m_firstMouse = true;
 };
