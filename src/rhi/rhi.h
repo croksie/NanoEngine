@@ -4,7 +4,7 @@
 #include "rhi/rhi_shader.h"
 #include "rhi/rhi_texture.h"
 
-#include "core/window.h"
+#include "platform/window/window.h"
 #include "core/config.h"
 
 #include "glm/glm.hpp"

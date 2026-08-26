@@ -1,6 +1,6 @@
 #pragma once
 #include "rhi/vulkan/vulkan_buffer.h"
-#include "core/window.h"
+#include "platform/window/window.h"
 #include "core/config.h"
 
 #include <VkBootstrap.h>

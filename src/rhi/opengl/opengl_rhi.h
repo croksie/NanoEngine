@@ -3,7 +3,7 @@
 #include "rhi/opengl/opengl_buffer.h"
 #include "rhi/opengl/opengl_pipeline.h"
 #include "rhi/opengl/opengl_texture.h"
-#include "core/window.h"
+#include "platform/window/window.h"
 #include "core/config.h"
 
 #include <memory>

@@ -1,4 +1,4 @@
-#include "core/window.h"
+#include "platform/window/window.h"
 #include "core/config.h"
 #include "rendering/renderer.h"
 #include "utils/log.h"
