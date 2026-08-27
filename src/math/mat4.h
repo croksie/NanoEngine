@@ -44,6 +44,10 @@ struct Mat4 {
         return Vec4(res);
     }
 
+    Mat4 translate(const Vec3& v) {
+        return Mat4(glm::translate(this->toGlm(), v.toGlm()));
+    }
+
     operator glm::mat4() const { return toGlm(); }
 
     glm::mat4 toGlm() const {
