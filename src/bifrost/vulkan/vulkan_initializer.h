@@ -74,7 +74,7 @@ struct VulkanContext {
 
 // Initialize
 VulkanContext createContext(platform::Window* window, std::shared_ptr<core::EngineConfig> config);
-void createSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height);
+void createSwapchain(VulkanContext& ctx, uint32_t width, uint32_t height, bool vsync);
 void createDepthBuffer(VulkanContext& ctx, uint32_t width, uint32_t height);
 void createFenceAndSemaphore(VulkanContext& ctx);
 void createCommandPool(VulkanContext& ctx);

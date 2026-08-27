@@ -32,7 +32,7 @@ void VulkanBifrost::initialize(platform::Window *window, std::shared_ptr<core::E
     m_width = static_cast<uint32_t>(width);
     m_height = static_cast<uint32_t>(height);
 
-    createSwapchain(m_ctx, m_width, m_height);
+    createSwapchain(m_ctx, m_width, m_height, m_config->vsync);
     createDepthBuffer(m_ctx, m_width, m_height);
     createFenceAndSemaphore(m_ctx);
     createCommandPool(m_ctx);
@@ -101,7 +101,7 @@ void VulkanBifrost::beginFrame() {
         cleanupSwapchain(m_ctx);
         cleanupDepthBuffer(m_ctx);
 
-        createSwapchain(m_ctx, m_width, m_height);
+        createSwapchain(m_ctx, m_width, m_height, m_config->vsync);
         createDepthBuffer(m_ctx, m_width, m_height);
         m_framebufferResized = false;
     }

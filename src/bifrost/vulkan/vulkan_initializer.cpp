@@ -79,12 +79,12 @@ VulkanContext createContext(platform::Window *window, std::shared_ptr<core::Engi
 }
 
 // Swapchain
-void createSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height) {
+void createSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height, bool vsync) {
     ENGINE_LOG_TRACE("Creating swapchain...");
     vkb::SwapchainBuilder scBuilder{ ctx.physicalDevice, ctx.device, ctx.surface };
     auto scResult = scBuilder
         .set_desired_extent(width, height)
-        .set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)
+        .set_desired_present_mode(vsync ? VK_PRESENT_MODE_FIFO_KHR : VK_PRESENT_MODE_IMMEDIATE_KHR)
         .build();
 
     if (!scResult) {
