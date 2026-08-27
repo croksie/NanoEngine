@@ -136,6 +136,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(vk-bootstrap)
 
+# 8. assimp
+message(STATUS "[Midgard] Fetching Assimp...")
+FetchContent_Declare(
+    assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG        v6.0.5
+)
+FetchContent_MakeAvailable(assimp)
+
 # ==============================================================================
 # Executable & Build Target
 # ==============================================================================
@@ -179,6 +188,7 @@ target_link_libraries(Midgard PRIVATE
     Vulkan::Vulkan
     shaderc
     vk-bootstrap::vk-bootstrap
+    assimp::assimp
 )
 
 # Platform-specific dependencies
