@@ -2,6 +2,8 @@
 
 #include "utils/log.h"
 
+namespace midgard::platform {
+
 void Input::init(GLFWwindow *window) {
     m_window = window;
 
@@ -11,7 +13,7 @@ void Input::init(GLFWwindow *window) {
     ENGINE_LOG_INFO("Input system initialized.");
 }
 
-bool Input::isKeyPressed(KeyCode key){
+bool Input::isKeyPressed(KeyCode key) {
     return glfwGetKey(m_window, static_cast<int>(key)) == static_cast<int>(Action::Press);
 }
 
@@ -24,9 +26,11 @@ void Input::getMousePosition(double &x, double &y) {
 }
 
 void Input::addKeyCallback(KeyCallback callback) {
-   // TODO : implements
+    // TODO : implements
 }
 
 void Input::glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     // TODO : implements
 }
+
+} // namespace midgard::platform

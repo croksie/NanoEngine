@@ -3,10 +3,11 @@
 
 #include <string>
 #include <fstream>
+#include <sstream>
 
-namespace fileUtils {
+namespace midgard::utils::file {
 
-    std::string readTextFile(const std::string& path) {
+    inline std::string readTextFile(const std::string& path) {
         std::ifstream file(path);
         if (!file.is_open()) {
             ENGINE_LOG_ERROR("Failed to open file: {0}", path);
@@ -18,4 +19,4 @@ namespace fileUtils {
         return buffer.str();
     }
 
-}
+} // namespace midgard::utils::file

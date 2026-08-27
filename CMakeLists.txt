@@ -4,7 +4,7 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 # ==============================================================================
 # Project Setup
 # ==============================================================================
-project(NanoEngine
+project(Midgard
     VERSION 0.1.0
     DESCRIPTION "Modern C++20 3D Rendering Engine with Vulkan & OpenGL"
     LANGUAGES C CXX
@@ -26,12 +26,12 @@ include(FetchContent)
 # ==============================================================================
 
 # Vulkan SDK
-message(STATUS "[NanoEngine] Searching for Vulkan SDK...")
+message(STATUS "[Midgard] Searching for Vulkan SDK...")
 find_package(Vulkan REQUIRED)
 
 find_library(SHADERC_LIB NAMES shaderc_shared shaderc_combined HINTS $ENV{VULKAN_SDK}/lib)
 if(SHADERC_LIB)
-    message(STATUS "[NanoEngine] Found shaderc library: ${SHADERC_LIB}")
+    message(STATUS "[Midgard] Found shaderc library: ${SHADERC_LIB}")
     add_library(shaderc INTERFACE)
     target_link_libraries(shaderc INTERFACE "${SHADERC_LIB}")
     target_include_directories(shaderc INTERFACE "${Vulkan_INCLUDE_DIR}")
@@ -40,7 +40,7 @@ endif()
 # Optional GLSL shader compiler (glslc)
 find_program(GLSLC_EXECUTABLE NAMES glslc HINTS ${Vulkan_GLSLC_EXECUTABLE} $ENV{VULKAN_SDK}/bin)
 if(GLSLC_EXECUTABLE)
-    message(STATUS "[NanoEngine] Found Vulkan GLSL compiler (glslc): ${GLSLC_EXECUTABLE}")
+    message(STATUS "[Midgard] Found Vulkan GLSL compiler (glslc): ${GLSLC_EXECUTABLE}")
 endif()
 
 # ==============================================================================
@@ -48,7 +48,7 @@ endif()
 # ==============================================================================
 
 # 1. GLFW (Windowing & Input)
-message(STATUS "[NanoEngine] Fetching GLFW 3.4...")
+message(STATUS "[Midgard] Fetching GLFW 3.4...")
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -62,7 +62,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glfw)
 
 # 2. GLM (OpenGL Mathematics)
-message(STATUS "[NanoEngine] Fetching GLM 1.0.1...")
+message(STATUS "[Midgard] Fetching GLM 1.0.1...")
 FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
@@ -71,7 +71,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glm)
 
 # 3. GLAD (OpenGL Loader Generator)
-message(STATUS "[NanoEngine] Fetching GLAD...")
+message(STATUS "[Midgard] Fetching GLAD...")
 set(GLAD_PROFILE "core" CACHE STRING "" FORCE)
 set(GLAD_ALL_EXTENSIONS ON CACHE BOOL "" FORCE)
 
@@ -83,7 +83,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glad)
 
 # 4. stb (Header-only Image Loading)
-message(STATUS "[NanoEngine] Fetching stb...")
+message(STATUS "[Midgard] Fetching stb...")
 FetchContent_Declare(
     stb
     GIT_REPOSITORY https://github.com/nothings/stb.git
@@ -95,7 +95,7 @@ add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
 
 # 5. Dear ImGui (UI & Debug Overlay)
-message(STATUS "[NanoEngine] Fetching Dear ImGui v1.91.8...")
+message(STATUS "[Midgard] Fetching Dear ImGui v1.91.8...")
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -119,7 +119,7 @@ target_include_directories(imgui PUBLIC
 target_link_libraries(imgui PUBLIC glfw glad Vulkan::Vulkan)
 
 # 6. spdlog (Fast C++ Logging Library)
-message(STATUS "[NanoEngine] Fetching spdlog v1.14.1...")
+message(STATUS "[Midgard] Fetching spdlog v1.14.1...")
 FetchContent_Declare(
     spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
@@ -128,11 +128,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(spdlog)
 
 # 7. vk-bootstrap
-message(STATUS "[NanoEngine] Fetching ck-bootstrap v1.3.296...")
+message(STATUS "[Midgard] Fetching vk-bootstrap v1.3.296...")
 FetchContent_Declare(
     vk-bootstrap
     GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap.git
-    GIT_TAG        v1.3.296 # ou version récente
+    GIT_TAG        v1.3.296
 )
 FetchContent_MakeAvailable(vk-bootstrap)
 
@@ -144,30 +144,30 @@ FetchContent_MakeAvailable(vk-bootstrap)
 file(GLOB_RECURSE ENGINE_SOURCES "src/*.cpp" "src/*.h")
 
 # Define target executable
-add_executable(NanoEngine
+add_executable(Midgard
     main.cpp
     ${ENGINE_SOURCES}
 )
 
 # Target include directories
-target_include_directories(NanoEngine PRIVATE
+target_include_directories(Midgard PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Target compiler options
 if(MSVC)
-    target_compile_options(NanoEngine PRIVATE /W4 /utf-8)
+    target_compile_options(Midgard PRIVATE /W4 /utf-8)
 else()
-    target_compile_options(NanoEngine PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(Midgard PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-target_compile_options(NanoEngine PRIVATE -DDEBUG)
-target_compile_definitions(NanoEngine PRIVATE 
+target_compile_options(Midgard PRIVATE -DDEBUG)
+target_compile_definitions(Midgard PRIVATE 
     GLM_FORCE_DEPTH_ZERO_TO_ONE
     GLFW_INCLUDE_NONE
 )
 
 # Target linked libraries
-target_link_libraries(NanoEngine PRIVATE
+target_link_libraries(Midgard PRIVATE
     glfw
     glad
     glm::glm
@@ -179,8 +179,7 @@ target_link_libraries(NanoEngine PRIVATE
     vk-bootstrap::vk-bootstrap
 )
 
-
 # Platform-specific dependencies
 if(WIN32)
-    target_link_libraries(NanoEngine PRIVATE opengl32)
+    target_link_libraries(Midgard PRIVATE opengl32)
 endif()

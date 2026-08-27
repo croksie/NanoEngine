@@ -1,28 +1,26 @@
 #pragma once
 #include "core/config.h"
-#include "core/math/math.h"
+#include "math/math.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+namespace midgard::scene {
 
 class Camera {
 public:
     Camera() = default;
-    Camera(const CameraConfig& config, Vec3 position = Vec3(0.0f, 2.0f, -10.0f));
+    Camera(const core::CameraConfig& config, math::Vec3 position = math::Vec3(0.0f, 2.0f, -10.0f));
 
     glm::mat4 getProjectionMatrix() const { return m_projection; }
     glm::mat4 getViewMatrix() const;
 
     void processMouseMovement(float xOffset, float yOffset, bool constrainPitch = true);
-    void processKeyboard(const Vec3& direction, float deltaTime);
+    void processKeyboard(const math::Vec3& direction, float deltaTime);
 
-    Vec3 getPosition() const { return m_position; }
-    void setPosition(const Vec3& newPosition);
+    math::Vec3 getPosition() const { return m_position; }
+    void setPosition(const math::Vec3& newPosition);
 
-    Vec3 getFront() const { return m_front; }
-    Vec3 getRight() const { return m_right; }
-    Vec3 getUp() const { return m_up; }
+    math::Vec3 getFront() const { return m_front; }
+    math::Vec3 getRight() const { return m_right; }
+    math::Vec3 getUp() const { return m_up; }
 
     float getSpeed() const { return m_speed; }
     void setSpeed(float speed) { m_speed = speed; }
@@ -33,13 +31,13 @@ public:
 private:
     void updateCameraVectors();
 
-    CameraConfig m_config;
+    core::CameraConfig m_config;
 
-    Vec3 m_position = Vec3(0.0f, 2.0f, -10.0f);
-    Vec3 m_front = Vec3(0.0f, 0.0f, 1.0f);
-    Vec3 m_up = Vec3(0.0f, 1.0f, 0.0f);
-    Vec3 m_right = Vec3(1.0f, 0.0f, 0.0f);
-    Vec3 m_worldUp = Vec3(0.0f, 1.0f, 0.0f);
+    math::Vec3 m_position = math::Vec3(0.0f, 2.0f, -10.0f);
+    math::Vec3 m_front = math::Vec3(0.0f, 0.0f, 1.0f);
+    math::Vec3 m_up = math::Vec3(0.0f, 1.0f, 0.0f);
+    math::Vec3 m_right = math::Vec3(1.0f, 0.0f, 0.0f);
+    math::Vec3 m_worldUp = math::Vec3(0.0f, 1.0f, 0.0f);
 
     glm::mat4 m_projection = glm::mat4(1.0f);
 
@@ -48,3 +46,5 @@ private:
     float m_speed = 6.0f;
     float m_sensitivity = 0.1f;
 };
+
+} // namespace midgard::scene

@@ -1,53 +1,64 @@
 #include "rendering/renderer.h"
 
+#include <string>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "utils/log.h"
 #include "utils/file_utils.h"
+#include "math/math.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include "bifrost/opengl/opengl_bifrost.h"
+#include "bifrost/vulkan/vulkan_bifrost.h"
+#include "bifrost/pipeline.h"
+#include "bifrost/buffer.h"
+#include "bifrost/shader.h"
+#include "bifrost/texture.h"
+#include "resources/mesh.h"
+#include "resources/material.h"
+#include "core/config.h"
+#include "platform/window/window.h"
+#include "platform/input/input.h"
 
-#include <string>
+namespace midgard::render {
+
 
 std::string assetFolder = "../../assets/";
-
-std::string vertexShaderSource = fileUtils::readTextFile(assetFolder + "shaders/base.vert");
-std::string fragmentShaderSource = fileUtils::readTextFile(assetFolder + "shaders/base.frag");
-
 
 float vertices[] = {
     // Face Front
     -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     1.0f, 1.0f,
     -0.5f,  0.5f,  0.5f,         1.0f, 0.0f, 0.0f,     0.0f, 1.0f,
     // Face Back
-     0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     0.0f, 0.0f,
     -0.5f, -0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     1.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 0.0f,     0.0f, 1.0f,
     // Face Left
     -0.5f, -0.5f, -0.5f,         0.0f, 0.0f, 1.0f,     0.0f, 0.0f,
     -0.5f, -0.5f,  0.5f,         0.0f, 0.0f, 1.0f,     1.0f, 0.0f,
     -0.5f,  0.5f,  0.5f,         0.0f, 0.0f, 1.0f,     1.0f, 1.0f,
     -0.5f,  0.5f, -0.5f,         0.0f, 0.0f, 1.0f,     0.0f, 1.0f,
     // Face Right
-     0.5f, -0.5f,  0.5f,         1.0f, 1.0f, 0.0f,     0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,         1.0f, 1.0f, 0.0f,     1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,         1.0f, 1.0f, 0.0f,     1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,         1.0f, 1.0f, 0.0f,     0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,         1.0f, 1.0f, 0.0f,     0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,         1.0f, 1.0f, 0.0f,     1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,         1.0f, 1.0f, 0.0f,     1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,         1.0f, 1.0f, 0.0f,     0.0f, 1.0f,
     // Face Up
     -0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,     0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,     1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,     1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,         0.0f, 1.0f, 1.0f,     1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,     1.0f, 1.0f,
     -0.5f,  0.5f, -0.5f,         0.0f, 1.0f, 1.0f,     0.0f, 1.0f,
     // Face Down
     -0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,     0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,     1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,     1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,         1.0f, 0.0f, 1.0f,     1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,     1.0f, 1.0f,
     -0.5f, -0.5f,  0.5f,         1.0f, 0.0f, 1.0f,     0.0f, 1.0f
 };
 
@@ -73,9 +84,10 @@ uint32_t indices[] = {
 };
 
 
+void Renderer::createTestModel() {
+    std::string vertexShaderSource = utils::file::readTextFile(assetFolder + "shaders/base.vert");
+    std::string fragmentShaderSource = utils::file::readTextFile(assetFolder + "shaders/base.frag");
 
-
-void Renderer::createTestModel(){
     // Create texture
     int width = 0, height = 0, nrChannels = 0;
     unsigned char *data = stbi_load((assetFolder + "textures/wall.jpg").c_str(), &width, &height, &nrChannels, STBI_rgb_alpha);
@@ -85,10 +97,10 @@ void Renderer::createTestModel(){
         ENGINE_LOG_INFO("Renderer::createTestModel: Loaded texture ({}x{}, channels: {})", width, height, nrChannels);
     }
 
-    TextureDesc texDesc{};
+    bifrost::TextureDesc texDesc{};
     texDesc.width = static_cast<uint32_t>(width);
     texDesc.height = static_cast<uint32_t>(height);
-    texDesc.format = TextureFormat::RGBA8_SRGB;
+    texDesc.format = bifrost::TextureFormat::RGBA8_SRGB;
     texDesc.initialData = data;
     texDesc.size = width * height * 4;
 
@@ -99,33 +111,32 @@ void Renderer::createTestModel(){
     }
 
     // Create pipeline
-    PipelineInfo info;
-    info.vertexShader = m_rhi->createShader(ShaderType::VERTEX, vertexShaderSource);
-
-    info.fragmentShader = m_rhi->createShader(ShaderType::FRAGMENT, fragmentShaderSource);
+    bifrost::PipelineInfo info;
+    info.vertexShader = m_rhi->createShader(bifrost::ShaderType::VERTEX, vertexShaderSource);
+    info.fragmentShader = m_rhi->createShader(bifrost::ShaderType::FRAGMENT, fragmentShaderSource);
     info.useInstance = true;
 
-    Material mat = Material(m_rhi->createPipeline(info));
-    ENGINE_LOG_DEBUG("Is pipeline valid ? : {}", mat.getPipeline() != nullptr ? "true" : "false");
+    resource::Material material(m_rhi->createPipeline(info));
+    ENGINE_LOG_DEBUG("Is pipeline valid ? : {}", material.getPipeline() != nullptr ? "true" : "false");
 
-    BufferDesc vertexBufferDesc{};
+    bifrost::BufferDesc vertexBufferDesc{};
     vertexBufferDesc.initData = vertices;
     vertexBufferDesc.size = sizeof(vertices);
-    vertexBufferDesc.type = BufferType::VERTEX;
-    std::shared_ptr<Buffer> vertexBuffer = m_rhi->createBuffer(vertexBufferDesc);
+    vertexBufferDesc.type = bifrost::BufferType::VERTEX;
+    std::shared_ptr<bifrost::Buffer> vertexBuffer = m_rhi->createBuffer(vertexBufferDesc);
 
-    BufferDesc indexBufferDesc{};
+    bifrost::BufferDesc indexBufferDesc{};
     indexBufferDesc.initData = indices;
     indexBufferDesc.size = sizeof(indices);
-    indexBufferDesc.type = BufferType::INDEX;
-    std::shared_ptr<Buffer> indexBuffer = m_rhi->createBuffer(indexBufferDesc);
+    indexBufferDesc.type = bifrost::BufferType::INDEX;
+    std::shared_ptr<bifrost::Buffer> indexBuffer = m_rhi->createBuffer(indexBufferDesc);
 
-    Mesh mesh = Mesh(vertexBuffer, indexBuffer);
+    resource::Mesh mesh(vertexBuffer, indexBuffer);
 
-    for(int i = -15; i<15 ; ++i) {
-        for(int j = -15; j<15 ; ++j) {
-            Model model = Model(std::make_shared<Mesh>(mesh), std::make_shared<Material>(mat));
-            model.setPosition(Vec3(2.0f*i, 2.0f*j, -15.0f));
+    for (int i = -15; i < 15; ++i) {
+        for (int j = -15; j < 15; ++j) {
+            scene::Model model(std::make_shared<resource::Mesh>(mesh), std::make_shared<resource::Material>(material));
+            model.setPosition(math::Vec3(2.0f * i, 2.0f * j, -15.0f));
             models.push_back(model);
         }
     }
@@ -139,40 +150,38 @@ void Renderer::createTestModel(){
 
     for (size_t i = 0; i < models.size(); ++i) {
         glm::mat4 modelMat = baseRotation;
-        modelMat[3] = glm::vec4(static_cast<glm::vec3>(models[i].getPosition()), 1.0f);
-        m_instances[i].modelMatrix = modelMat;
+        modelMat[3] = glm::vec4(models[i].getPosition().toGlm(), 1.0f);
+        m_instances[i].modelMatrix = math::Mat4(modelMat);
     }
 
-    BufferDesc desc{};
-    desc.size = m_instances.size() * sizeof(InstanceData);
-    desc.type = BufferType::VERTEX;
+    bifrost::BufferDesc desc{};
+    desc.size = m_instances.size() * sizeof(bifrost::InstanceData);
+    desc.type = bifrost::BufferType::VERTEX;
     desc.initData = m_instances.data();
 
     m_instanceBuffer = m_rhi->createBuffer(desc);
-
-
 }
 
-void Renderer::initialize(Window* window, std::shared_ptr<EngineConfig> config) {
+void Renderer::initialize(platform::Window* window, std::shared_ptr<core::EngineConfig> config) {
     ENGINE_LOG_INFO("Renderer initializing ...");
     m_config = config;
-    // Init RHI
-    if(m_config->api == GraphicsAPI::OpenGL) {
-        m_rhi = std::make_unique<OpenGLRHI>();
+
+    // Init Bifrost
+    if (m_config->api == core::GraphicsAPI::OpenGL) {
+        m_rhi = std::make_unique<bifrost::opengl::OpenGLBifrost>();
     } else {
-        m_rhi = std::make_unique<VulkanRHI>();
+        m_rhi = std::make_unique<bifrost::vulkan::VulkanBifrost>();
     }
     m_rhi->initialize(window, m_config);
 
-    CameraConfig cameraConfig{};
-    m_camera = Camera(cameraConfig);
+    core::CameraConfig cameraConfig{};
+    m_camera = scene::Camera(cameraConfig);
     createTestModel();
 
     ENGINE_LOG_INFO("Renderer initialized");
 }
 
 void Renderer::render() {
-
     // Delta time calculation
     const float currentTime = static_cast<float>(glfwGetTime());
     const float deltaTime = (m_lastFrameTime > 0.0f) ? (currentTime - m_lastFrameTime) : 0.016f;
@@ -180,29 +189,28 @@ void Renderer::render() {
 
     // Mouse Look
     double mouseX, mouseY;
-    Input::getMousePosition(mouseX, mouseY);
+    platform::Input::getMousePosition(mouseX, mouseY);
     if (m_firstMouse) {
         m_lastMouseX = mouseX;
         m_lastMouseY = mouseY;
         m_firstMouse = false;
     }
     float xOffset = static_cast<float>(mouseX - m_lastMouseX);
-    float yOffset = static_cast<float>(m_lastMouseY - mouseY); // Inverted since Y goes downwards
+    float yOffset = static_cast<float>(m_lastMouseY - mouseY);
     m_lastMouseX = mouseX;
     m_lastMouseY = mouseY;
 
     m_camera.processMouseMovement(xOffset, yOffset);
 
     // Keyboard Movement
-    if (Input::isKeyPressed(KeyCode::Z)) m_camera.processKeyboard(m_camera.getFront(), deltaTime);
-    if (Input::isKeyPressed(KeyCode::S)) m_camera.processKeyboard(-m_camera.getFront(), deltaTime);
-    if (Input::isKeyPressed(KeyCode::Q)) m_camera.processKeyboard(-m_camera.getRight(), deltaTime);
-    if (Input::isKeyPressed(KeyCode::D)) m_camera.processKeyboard(m_camera.getRight(), deltaTime);
-    if (Input::isKeyPressed(KeyCode::Space)) m_camera.processKeyboard(Vec3(0.0f, 1.0f, 0.0f), deltaTime);
+    if (platform::Input::isKeyPressed(platform::KeyCode::Z)) m_camera.processKeyboard(m_camera.getFront(), deltaTime);
+    if (platform::Input::isKeyPressed(platform::KeyCode::S)) m_camera.processKeyboard(-m_camera.getFront(), deltaTime);
+    if (platform::Input::isKeyPressed(platform::KeyCode::Q)) m_camera.processKeyboard(-m_camera.getRight(), deltaTime);
+    if (platform::Input::isKeyPressed(platform::KeyCode::D)) m_camera.processKeyboard(m_camera.getRight(), deltaTime);
+    if (platform::Input::isKeyPressed(platform::KeyCode::Space)) m_camera.processKeyboard(math::Vec3(0.0f, 1.0f, 0.0f), deltaTime);
 
     glm::mat4 matrices[2] = {m_camera.getViewMatrix(), m_camera.getProjectionMatrix()};
     const void* data = matrices;
-
 
     ENGINE_LOG_TRACE("Render start");
     m_rhi->beginFrame();
@@ -218,17 +226,17 @@ void Renderer::render() {
 
     for (size_t i = 0; i < models.size(); ++i) {
         glm::mat4 modelMat = baseRotation;
-        modelMat[3] = glm::vec4(static_cast<glm::vec3>(models[i].getPosition()), 1.0f);
-        m_instances[i].modelMatrix = modelMat;
+        modelMat[3] = glm::vec4(models[i].getPosition().toGlm(), 1.0f);
+        m_instances[i].modelMatrix = math::Mat4(modelMat);
     }
 
-    m_instanceBuffer->setData(m_instances.size() * sizeof(InstanceData), m_instances.data());
+    m_instanceBuffer->setData(m_instances.size() * sizeof(bifrost::InstanceData), m_instances.data());
 
 
 
     //for (auto& model : models) {
-        std::shared_ptr<Mesh> mesh = models[0].getMesh();
-        std::shared_ptr<Material> material = models[0].getMaterial();
+        std::shared_ptr<resource::Mesh> mesh = models[0].getMesh();
+        std::shared_ptr<resource::Material> material = models[0].getMaterial();
 
         m_rhi->bindPipeline(material->getPipeline().get());
         m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
@@ -242,11 +250,12 @@ void Renderer::render() {
     ENGINE_LOG_TRACE("Render end");
 }
 
-void Renderer::shutdown()
-{
+void Renderer::shutdown() {
     ENGINE_LOG_DEBUG("Renderer shutting down ...");
     models.clear();
     m_instanceBuffer = nullptr;
     m_texture = nullptr;
     m_rhi->shutdown(); // Ensure to have free all buffer and pipeline before
 }
+
+} // namespace midgard::render

@@ -1,6 +1,8 @@
 #pragma once
 #include <GLFW/glfw3.h>
 
+namespace midgard::platform {
+
 enum class KeyCode {
     Z = GLFW_KEY_W, 
     Q = GLFW_KEY_A, 
@@ -15,3 +17,5 @@ enum class Action {
     Release = GLFW_RELEASE, 
     Repeat = GLFW_REPEAT 
 };
+
+} // namespace midgard::platform

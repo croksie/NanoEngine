@@ -1,10 +1,11 @@
 #pragma once
-#include "platform/input/key_codes.h"
+#include <functional>
 
 #include <GLFW/glfw3.h>
 
-#include <functional>
-#include <vector>
+#include "platform/input/key_codes.h"
+
+namespace midgard::platform {
 
 class Input {
 public:
@@ -24,3 +25,5 @@ private:
 
     inline static GLFWwindow* m_window = nullptr;
 };
+
+} // namespace midgard::platform
