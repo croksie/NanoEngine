@@ -11,6 +11,7 @@
 #include "utils/log.h"
 #include "utils/file_utils.h"
 #include "math/math.h"
+#include "resources/default.h"
 
 #include "bifrost/opengl/opengl_bifrost.h"
 #include "bifrost/vulkan/vulkan_bifrost.h"
@@ -104,7 +105,7 @@ void Renderer::createTestModel() {
     texDesc.initialData = data;
     texDesc.size = width * height * 4;
 
-    m_texture = m_rhi->createTexture(texDesc);
+    auto texture = m_rhi->createTexture(texDesc);
 
     if (data) {
         stbi_image_free(data);
@@ -116,23 +117,29 @@ void Renderer::createTestModel() {
     info.fragmentShader = m_rhi->createShader(bifrost::ShaderType::FRAGMENT, fragmentShaderSource);
     info.useInstance = true;
 
-    resource::Material material(m_rhi->createPipeline(info));
-    ENGINE_LOG_DEBUG("Is pipeline valid ? : {}", material.getPipeline() != nullptr ? "true" : "false");
+    auto pipeline = m_rhi->createPipeline(info);
 
+    // Create Material
+    resource::Material material(pipeline, texture);
+
+    // Create Mesh
     bifrost::BufferDesc vertexBufferDesc{};
     vertexBufferDesc.initData = vertices;
     vertexBufferDesc.size = sizeof(vertices);
     vertexBufferDesc.type = bifrost::BufferType::VERTEX;
-    std::shared_ptr<bifrost::Buffer> vertexBuffer = m_rhi->createBuffer(vertexBufferDesc);
+
+    auto vertexBuffer =  m_rhi->createBuffer(vertexBufferDesc);
 
     bifrost::BufferDesc indexBufferDesc{};
     indexBufferDesc.initData = indices;
     indexBufferDesc.size = sizeof(indices);
     indexBufferDesc.type = bifrost::BufferType::INDEX;
-    std::shared_ptr<bifrost::Buffer> indexBuffer = m_rhi->createBuffer(indexBufferDesc);
+
+    auto indexBuffer = m_rhi->createBuffer(indexBufferDesc);
 
     resource::Mesh mesh(vertexBuffer, indexBuffer);
 
+    // Create Models
     for (int i = -15; i < 15; ++i) {
         for (int j = -15; j < 15; ++j) {
             scene::Model model(std::make_shared<resource::Mesh>(mesh), std::make_shared<resource::Material>(material));
@@ -167,15 +174,24 @@ void Renderer::initialize(platform::Window* window, std::shared_ptr<core::Engine
     m_config = config;
 
     // Init Bifrost
-    if (m_config->api == core::GraphicsAPI::OpenGL) {
-        m_rhi = std::make_unique<bifrost::opengl::OpenGLBifrost>();
-    } else {
-        m_rhi = std::make_unique<bifrost::vulkan::VulkanBifrost>();
+    switch (m_config->api) {
+        case core::GraphicsAPI::OpenGL:
+            m_rhi = std::make_unique<bifrost::opengl::OpenGLBifrost>();
+            break;
+        case core::GraphicsAPI::Vulkan:
+            m_rhi = std::make_unique<bifrost::vulkan::VulkanBifrost>();
+            break;
     }
     m_rhi->initialize(window, m_config);
 
+    // Init default Resources
+    resource::DefaultResources::init(m_rhi.get());
+
+    // Init Camera
     core::CameraConfig cameraConfig{};
     m_camera = scene::Camera(cameraConfig);
+
+    // Create Test Models
     createTestModel();
 
     ENGINE_LOG_INFO("Renderer initialized");
@@ -242,7 +258,7 @@ void Renderer::render() {
         m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
         m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
         m_rhi->bindInstanceBuffer(material->getPipeline(), m_instanceBuffer);
-        m_rhi->bindTexture(material->getPipeline(), m_texture, 1);
+        m_rhi->bindTexture(material->getPipeline(), material->getTexture(), 1);
         m_rhi->draw(material->getPipeline(), 900);
     //}
 
@@ -254,7 +270,7 @@ void Renderer::shutdown() {
     ENGINE_LOG_DEBUG("Renderer shutting down ...");
     models.clear();
     m_instanceBuffer = nullptr;
-    m_texture = nullptr;
+    resource::DefaultResources::shutdown();
     m_rhi->shutdown(); // Ensure to have free all buffer and pipeline before
 }
 

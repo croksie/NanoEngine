@@ -40,7 +40,7 @@ private:
 
     std::vector<bifrost::InstanceData> m_instances = std::vector<bifrost::InstanceData>(900);
     std::shared_ptr<bifrost::Buffer> m_instanceBuffer;
-    std::shared_ptr<bifrost::Texture> m_texture;
+
     void createTestModel();
 
     float m_lastFrameTime = 0.0f;
