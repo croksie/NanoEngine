@@ -50,17 +50,17 @@ void OpenGLPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) {
         vaoBindingPoint,
         buffer->getBufferId(),
         0,
-        8 * sizeof(float));
+        sizeof(Vertex));
 
-    m_numberOfVerticesInBindedObject = static_cast<GLsizei>(buffer->getSize() / (8 * sizeof(float)));
+    m_numberOfVerticesInBindedObject = static_cast<GLsizei>(buffer->getSize() / sizeof(Vertex));
     ENGINE_LOG_TRACE("VAO Created");
     glEnableVertexArrayAttrib(m_vertexArrayID, attribPos);
     glEnableVertexArrayAttrib(m_vertexArrayID, attribCol);
     glEnableVertexArrayAttrib(m_vertexArrayID, attribTexCoord);
 
     glVertexArrayAttribFormat(m_vertexArrayID, attribPos, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribFormat(m_vertexArrayID, attribCol, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float));
-    glVertexArrayAttribFormat(m_vertexArrayID, attribTexCoord, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float));
+    glVertexArrayAttribFormat(m_vertexArrayID, attribCol, 3, GL_FLOAT, GL_FALSE, sizeof(math::Vec3));
+    glVertexArrayAttribFormat(m_vertexArrayID, attribTexCoord, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(math::Vec3));
 
     glVertexArrayAttribBinding(m_vertexArrayID, attribPos, vaoBindingPoint);
     glVertexArrayAttribBinding(m_vertexArrayID, attribCol, vaoBindingPoint);

@@ -27,7 +27,7 @@ VulkanPipeline::VulkanPipeline(PipelineInfo& info, VulkanContext& ctx, VkPipelin
     std::vector<VkVertexInputAttributeDescription> attribDescs;
 
     // Binding 0 : Vertex
-    bindingDescs.push_back({0, static_cast<uint32_t>(VERTEX_SIZE), VK_VERTEX_INPUT_RATE_VERTEX});
+    bindingDescs.push_back({0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX});
     // Vertex Attributes (Position, Color, TexCoord)
     attribDescs.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0});
     attribDescs.push_back({1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)});
@@ -149,7 +149,7 @@ void VulkanPipeline::bindVertexBuffer(std::shared_ptr<Buffer> vertexBuffer) {
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(m_ctx->cmdBuffers[m_ctx->currentFrame], 0, 1, vulkanVertexBuffer->getBufferHandle(), offsets);
 
-    m_numberOfVerticesInBindedObject = static_cast<uint32_t>(vulkanVertexBuffer->getSize() / VERTEX_SIZE);
+    m_numberOfVerticesInBindedObject = static_cast<uint32_t>(vulkanVertexBuffer->getSize() / sizeof(Vertex));
 }
 
 void VulkanPipeline::bindInstanceBuffer(std::shared_ptr<Buffer> instanceBuffer) {

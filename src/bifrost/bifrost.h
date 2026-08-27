@@ -24,6 +24,12 @@ namespace midgard::bifrost {
     struct TextureDesc;
     class Texture;
 
+struct Vertex {
+    math::Vec3 position;
+    math::Vec3 normale;
+    math::Vec2 textCord; 
+};
+
 struct InstanceData {
     math::Mat4 modelMatrix;
 };

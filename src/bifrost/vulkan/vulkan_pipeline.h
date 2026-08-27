@@ -9,8 +9,6 @@
 namespace midgard::bifrost::vulkan {
     struct VulkanContext;
 
-constexpr int VERTEX_SIZE = 8 * sizeof(float);
-
 class VulkanPipeline : public Pipeline {
 public:
     VulkanPipeline() = delete;
