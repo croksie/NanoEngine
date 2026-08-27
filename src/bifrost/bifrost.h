@@ -26,8 +26,8 @@ namespace midgard::bifrost {
 
 struct Vertex {
     math::Vec3 position;
-    math::Vec3 normale;
-    math::Vec2 textCord; 
+    math::Vec3 normals;
+    math::Vec2 texCoords; 
 };
 
 struct InstanceData {

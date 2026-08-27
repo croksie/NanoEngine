@@ -12,6 +12,7 @@ namespace midgard::scene {
 
 class Model {
 public:
+    Model() = default;
     Model(std::shared_ptr<resource::Mesh> mesh, std::shared_ptr<resource::Material> material) 
         : m_mesh(mesh), m_material(material) {}
 

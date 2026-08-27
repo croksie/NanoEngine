@@ -12,6 +12,7 @@
 #include "utils/file_utils.h"
 #include "math/math.h"
 #include "resources/default.h"
+#include "utils/importer.h"
 
 #include "bifrost/opengl/opengl_bifrost.h"
 #include "bifrost/vulkan/vulkan_bifrost.h"
@@ -187,12 +188,30 @@ void Renderer::initialize(platform::Window* window, std::shared_ptr<core::Engine
     // Init default Resources
     resource::DefaultResources::init(m_rhi.get());
 
+    // Instance Buffer
+    math::Mat4 modelMat = math::Mat4(1.0f);
+    modelMat.translate(math::Vec3(0.0f,0.0f,-10.0f));
+
+    bifrost::InstanceData instance {};
+    instance.modelMatrix = modelMat;
+
+    std::vector<bifrost::InstanceData> instances;
+    instances.push_back(instance);
+
+    bifrost::BufferDesc desc{};
+    desc.size = instances.size() * sizeof(bifrost::InstanceData);
+    desc.type = bifrost::BufferType::VERTEX;
+    desc.initData = instances.data();
+
+    m_instanceBuffer = m_rhi->createBuffer(desc);
+
     // Init Camera
     core::CameraConfig cameraConfig{};
     m_camera = scene::Camera(cameraConfig);
 
     // Create Test Models
-    createTestModel();
+    //createTestModel();
+    m_model = utils::importer::importModel(assetFolder + "model/suzanne.glb", m_rhi.get());
 
     ENGINE_LOG_INFO("Renderer initialized");
 }
@@ -233,34 +252,42 @@ void Renderer::render() {
     m_rhi->clear();
     m_rhi->setGlobalUniform(data, sizeof(matrices));
 
-    const float time = static_cast<float>(glfwGetTime());
-    const glm::mat4 baseRotation = glm::rotate(
-        glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
-        time * glm::radians(50.0f),
-        glm::vec3(0.5f, 1.0f, 0.0f)
-    );
+    // const float time = static_cast<float>(glfwGetTime());
+    // const glm::mat4 baseRotation = glm::rotate(
+    //     glm::rotate(glm::mat4(1.0f), glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+    //     time * glm::radians(50.0f),
+    //     glm::vec3(0.5f, 1.0f, 0.0f)
+    // );
 
-    for (size_t i = 0; i < models.size(); ++i) {
-        glm::mat4 modelMat = baseRotation;
-        modelMat[3] = glm::vec4(models[i].getPosition().toGlm(), 1.0f);
-        m_instances[i].modelMatrix = math::Mat4(modelMat);
-    }
+    // for (size_t i = 0; i < models.size(); ++i) {
+    //     glm::mat4 modelMat = baseRotation;
+    //     modelMat[3] = glm::vec4(models[i].getPosition().toGlm(), 1.0f);
+    //     m_instances[i].modelMatrix = math::Mat4(modelMat);
+    // }
 
-    m_instanceBuffer->setData(m_instances.size() * sizeof(bifrost::InstanceData), m_instances.data());
+    // m_instanceBuffer->setData(m_instances.size() * sizeof(bifrost::InstanceData), m_instances.data());
 
+    // //for (auto& model : models) {
+    //     std::shared_ptr<resource::Mesh> mesh = models[0].getMesh();
+    //     std::shared_ptr<resource::Material> material = models[0].getMaterial();
 
+    //     m_rhi->bindPipeline(material->getPipeline().get());
+    //     m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
+    //     m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
+    //     m_rhi->bindInstanceBuffer(material->getPipeline(), m_instanceBuffer);
+    //     m_rhi->bindTexture(material->getPipeline(), material->getTexture(), 1);
+    //     m_rhi->draw(material->getPipeline(), 900);
+    // //}
 
-    //for (auto& model : models) {
-        std::shared_ptr<resource::Mesh> mesh = models[0].getMesh();
-        std::shared_ptr<resource::Material> material = models[0].getMaterial();
-
-        m_rhi->bindPipeline(material->getPipeline().get());
-        m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
-        m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
-        m_rhi->bindInstanceBuffer(material->getPipeline(), m_instanceBuffer);
-        m_rhi->bindTexture(material->getPipeline(), material->getTexture(), 1);
-        m_rhi->draw(material->getPipeline(), 900);
-    //}
+    math::Mat4 modelMat = math::Mat4(1.0f);
+    auto material = m_model.getMaterial();
+    auto mesh = m_model.getMesh();
+    m_rhi->bindPipeline(material->getPipeline().get());
+    m_rhi->bindVertexBuffer(material->getPipeline(), mesh->getVertexBuffer());
+    m_rhi->bindIndexBuffer(material->getPipeline(), mesh->getIndexBuffer());
+    m_rhi->bindInstanceBuffer(material->getPipeline(), m_instanceBuffer);
+    m_rhi->bindTexture(material->getPipeline(), material->getTexture(), 1);
+    m_rhi->draw(material->getPipeline());
 
     m_rhi->endFrame();
     ENGINE_LOG_TRACE("Render end");
@@ -270,6 +297,7 @@ void Renderer::shutdown() {
     ENGINE_LOG_DEBUG("Renderer shutting down ...");
     models.clear();
     m_instanceBuffer = nullptr;
+    m_model = scene::Model();
     resource::DefaultResources::shutdown();
     m_rhi->shutdown(); // Ensure to have free all buffer and pipeline before
 }

@@ -37,6 +37,7 @@ private:
     scene::Camera m_camera;
 
     std::vector<scene::Model> models;
+    scene::Model m_model;
 
     std::vector<bifrost::InstanceData> m_instances = std::vector<bifrost::InstanceData>(900);
     std::shared_ptr<bifrost::Buffer> m_instanceBuffer;
