@@ -164,7 +164,9 @@ target_compile_options(Midgard PRIVATE -DDEBUG)
 target_compile_definitions(Midgard PRIVATE 
     GLM_FORCE_DEPTH_ZERO_TO_ONE
     GLFW_INCLUDE_NONE
+    ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
 )
+
 
 # Target linked libraries
 target_link_libraries(Midgard PRIVATE

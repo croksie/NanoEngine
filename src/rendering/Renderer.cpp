@@ -27,7 +27,7 @@
 namespace midgard::render {
 
 
-std::string assetFolder = "../../assets/";
+std::string assetFolder(ASSETS_PATH);
 
 float vertices[] = {
     // Face Front
