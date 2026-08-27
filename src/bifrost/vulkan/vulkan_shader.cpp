@@ -37,7 +37,6 @@ VulkanShader::VulkanShader(VkDevice device, ShaderType type, const std::string &
     VkResult result = vkCreateShaderModule(m_device, &createInfo, nullptr, &m_module);
     if (result != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create shader module. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to create shader module");
     }
 }
 

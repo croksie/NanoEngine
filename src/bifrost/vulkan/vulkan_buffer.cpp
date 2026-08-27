@@ -20,7 +20,6 @@ VulkanBuffer::VulkanBuffer(const BufferDesc& desc, const VulkanContext& ctx) : m
     VkResult result = vkCreateBuffer(m_ctx.device, &bufferInfo, nullptr, &m_buffer);
     if (result != VK_SUCCESS) {
         ENGINE_LOG_ERROR("Failed to create buffer. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to create buffer");
     }
 
     // Get Memory Requirement and Allocate Memory
@@ -35,19 +34,16 @@ VulkanBuffer::VulkanBuffer(const BufferDesc& desc, const VulkanContext& ctx) : m
     result = vkAllocateMemory(ctx.device, &allocInfo, nullptr, &m_bufferMemory);
     if (result != VK_SUCCESS) {
         ENGINE_LOG_ERROR("Failed to allocate buffer memory. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to allocate buffer memory");
     }
 
     result = vkBindBufferMemory(ctx.device, m_buffer, m_bufferMemory, 0);
     if (result != VK_SUCCESS) {
         ENGINE_LOG_ERROR("Failed to bind buffer memory. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to bind buffer memory");
     }
 
     result = vkMapMemory(m_ctx.device, m_bufferMemory, 0, desc.size, 0, &m_bufferData);
     if (result != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to map memory. Vulkan error Code : {}", static_cast<int>(result));
-        throw std::runtime_error("Failed to map memory");
     }
     
     // Copy data to buffer if data is provided

@@ -28,7 +28,6 @@ VulkanTexture::VulkanTexture(const TextureDesc& desc, VulkanContext& ctx) : m_de
 
     if (vkCreateImage(m_ctx->device, &imageInfo, nullptr, &m_image) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create image");
-        throw std::runtime_error("Failed to create image");
     }
 
     // Allocate and bind device memory for Image
@@ -42,7 +41,6 @@ VulkanTexture::VulkanTexture(const TextureDesc& desc, VulkanContext& ctx) : m_de
 
     if (vkAllocateMemory(m_ctx->device, &allocInfo, nullptr, &m_imageMemory) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to allocate image memory");
-        throw std::runtime_error("Failed to allocate image memory");
     }
     vkBindImageMemory(m_ctx->device, m_image, m_imageMemory, 0);
 
@@ -112,7 +110,6 @@ VulkanTexture::VulkanTexture(const TextureDesc& desc, VulkanContext& ctx) : m_de
 
     if (vkCreateImageView(m_ctx->device, &viewInfo, nullptr, &m_imageView) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create image view");
-        throw std::runtime_error("Failed to create image view");
     }
 
     // Create sampler
@@ -132,7 +129,6 @@ VulkanTexture::VulkanTexture(const TextureDesc& desc, VulkanContext& ctx) : m_de
 
     if (vkCreateSampler(m_ctx->device, &samplerInfo, nullptr, &m_textureSampler) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create sampler");
-        throw std::runtime_error("Failed to create sampler");
     }
 
     ENGINE_LOG_INFO("Texture created successfully");

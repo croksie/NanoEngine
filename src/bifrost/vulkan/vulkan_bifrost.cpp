@@ -119,7 +119,6 @@ void VulkanBifrost::beginFrame() {
 
     if (vkBeginCommandBuffer(m_ctx.cmdBuffers[m_ctx.currentFrame], &beginInfo) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to begin recording command buffer!");
-        throw std::runtime_error("Failed to begin recording command buffer!");
     }
 
     transitionImageLayout(

@@ -30,7 +30,7 @@ VulkanContext createContext(platform::Window *window, std::shared_ptr<core::Engi
         .build();
 
     if (!instResult) {
-        throw std::runtime_error(instResult.error().message());
+        ENGINE_LOG_CRITICAL("Failed to create instance : {}",instResult.error().message());
     }
     vkb::Instance vkbInst = instResult.value();
     ctx.instance = vkbInst.instance;
@@ -57,7 +57,6 @@ VulkanContext createContext(platform::Window *window, std::shared_ptr<core::Engi
 
     if (!physResult) {
         ENGINE_LOG_CRITICAL("Failed to choose physical device : {}",physResult.error().message());
-        throw std::runtime_error(physResult.error().message());
     }
     vkb::PhysicalDevice vkbPhysDevice = physResult.value();
     ctx.physicalDevice = vkbPhysDevice.physical_device;
@@ -68,7 +67,6 @@ VulkanContext createContext(platform::Window *window, std::shared_ptr<core::Engi
     auto devResult = devBuilder.build();
     if (!devResult) {
         ENGINE_LOG_CRITICAL("Failed to create logical device : {}", devResult.error().message());
-        throw std::runtime_error(devResult.error().message());
     }
     vkb::Device vkbDevice = devResult.value();
     ctx.device = vkbDevice.device;
@@ -91,7 +89,6 @@ void createSwapchain(VulkanContext &ctx, uint32_t width, uint32_t height) {
 
     if (!scResult) {
         ENGINE_LOG_CRITICAL("Failed to create swapchain : {}", scResult.error().message());
-        throw std::runtime_error(scResult.error().message());
     }
     vkb::Swapchain vkbSwapchain = scResult.value();
     
@@ -121,7 +118,6 @@ void createDepthBuffer(VulkanContext &ctx, uint32_t width, uint32_t height) {
     }
     if (ctx.depthFormat == VK_FORMAT_UNDEFINED) {
         ENGINE_LOG_CRITICAL("No compatible depth format found");
-        throw std::runtime_error("No compatible depth format found");
     }
 
     ENGINE_LOG_TRACE("Creating depth resources...");
@@ -147,7 +143,6 @@ void createDepthBuffer(VulkanContext &ctx, uint32_t width, uint32_t height) {
 
         if (vkCreateImage(ctx.device, &depthImageInfo, nullptr, &ctx.depthImages[i]) != VK_SUCCESS) {
             ENGINE_LOG_CRITICAL("Failed to create depth image");
-            throw std::runtime_error("Failed to create depth image");
         }
 
         VkMemoryRequirements depthMemReqs;
@@ -160,7 +155,6 @@ void createDepthBuffer(VulkanContext &ctx, uint32_t width, uint32_t height) {
 
         if (vkAllocateMemory(ctx.device, &depthAllocInfo, nullptr, &ctx.depthImageMemories[i]) != VK_SUCCESS) {
             ENGINE_LOG_CRITICAL("Failed to allocate depth image memory");
-            throw std::runtime_error("Failed to allocate depth image memory");
         }
 
         vkBindImageMemory(ctx.device, ctx.depthImages[i], ctx.depthImageMemories[i], 0);
@@ -178,7 +172,6 @@ void createDepthBuffer(VulkanContext &ctx, uint32_t width, uint32_t height) {
 
         if (vkCreateImageView(ctx.device, &depthViewInfo, nullptr, &ctx.depthImageViews[i]) != VK_SUCCESS) {
             ENGINE_LOG_CRITICAL("Failed to create depth image view");
-            throw std::runtime_error("Failed to create depth image view");
         }
     }
 }
@@ -218,7 +211,6 @@ void createCommandBuffer(VulkanContext &ctx) {
 
     if (vkAllocateCommandBuffers(ctx.device, &allocInfo, ctx.cmdBuffers.data()) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to allocate command buffers");
-        throw std::runtime_error("Failed to allocate command buffers");
     }
 }
 
@@ -257,7 +249,6 @@ void createDescriptorSetLayout(VulkanContext &ctx) {
 
     if (vkCreateDescriptorSetLayout(ctx.device, &descriptorLayoutInfo, nullptr, &ctx.descriptorSetLayout) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create descriptor set layout");
-        throw std::runtime_error("Failed to create descriptor set layout");
     }
 }
 
@@ -277,7 +268,6 @@ void createDescriptorPool(VulkanContext &ctx) {
 
     if (vkCreateDescriptorPool(ctx.device, &descriptorPoolInfo, nullptr, &ctx.descriptorPool) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create descriptor pool");
-        throw std::runtime_error("Failed to create descriptor pool");
     }
 }
 
@@ -293,7 +283,6 @@ void createDescriptorSets(VulkanContext &ctx) {
 
     if (vkAllocateDescriptorSets(ctx.device, &descriptorAllocInfo, ctx.descriptorSets.data()) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to allocate descriptor sets");
-        throw std::runtime_error("Failed to allocate descriptor sets");
     }
 
     ENGINE_LOG_TRACE("Writing descriptor sets...");
@@ -332,7 +321,6 @@ void createPipelineLayout(VulkanContext &ctx) {
 
     if (vkCreatePipelineLayout(ctx.device, &layoutInfo, nullptr, &ctx.pipelineLayout) != VK_SUCCESS) {
         ENGINE_LOG_CRITICAL("Failed to create pipeline layout");
-        throw std::runtime_error("Failed to create pipeline layout");
     }
 }
 
@@ -391,7 +379,6 @@ uint32_t findMemoryType(const VulkanContext& ctx, uint32_t typeFilter, VkMemoryP
         }
     }
     ENGINE_LOG_CRITICAL("Failed to find suitable memory type");
-    throw std::runtime_error("Failed to find suitable memory type");
 }
 
 VkCommandBuffer beginSingleTimeCommands(const VulkanContext& ctx) {

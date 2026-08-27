@@ -1,4 +1,5 @@
 #pragma once
+#include <stdexcept>
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #include <spdlog/spdlog.h>
@@ -8,4 +9,4 @@
 #define ENGINE_LOG_INFO(...)      SPDLOG_INFO(__VA_ARGS__)
 #define ENGINE_LOG_WARN(...)      SPDLOG_WARN(__VA_ARGS__)
 #define ENGINE_LOG_ERROR(...)     SPDLOG_ERROR(__VA_ARGS__)
-#define ENGINE_LOG_CRITICAL(...)  SPDLOG_CRITICAL(__VA_ARGS__)
+#define ENGINE_LOG_CRITICAL(...)  SPDLOG_CRITICAL(__VA_ARGS__), throw std::runtime_error("Critical error");

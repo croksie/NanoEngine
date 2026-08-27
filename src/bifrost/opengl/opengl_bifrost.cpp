@@ -37,7 +37,6 @@ void OpenGLBifrost::initialize(platform::Window* window, std::shared_ptr<core::E
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         ENGINE_LOG_CRITICAL("Failed to initialize OpenGL context");
-        throw std::runtime_error("Failed to initialize OpenGL context");
     }
     
     ENGINE_LOG_INFO("OpenGL Version {}", (const char*)glGetString(GL_VERSION));
@@ -109,11 +108,9 @@ std::shared_ptr<Buffer> OpenGLBifrost::createBuffer(BufferDesc& desc) {
 void OpenGLBifrost::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     if (pipeline == nullptr) {
         ENGINE_LOG_CRITICAL("Pipeline is null");
-        throw std::runtime_error("Pipeline is null");
     }
     if (buffer == nullptr) {
         ENGINE_LOG_CRITICAL("Buffer is null");
-        throw std::runtime_error("Buffer is null");
     }
     pipeline->bindVertexBuffer(buffer);
     ENGINE_LOG_TRACE("Vertex buffer bound");
@@ -122,11 +119,9 @@ void OpenGLBifrost::bindVertexBuffer(std::shared_ptr<Pipeline> pipeline, std::sh
 void OpenGLBifrost::bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     if (pipeline == nullptr) {
         ENGINE_LOG_CRITICAL("Pipeline is null");
-        throw std::runtime_error("Pipeline is null");
     }
     if (buffer == nullptr) {
         ENGINE_LOG_CRITICAL("Buffer is null");
-        throw std::runtime_error("Buffer is null");
     }
     pipeline->bindInstanceBuffer(buffer);
     ENGINE_LOG_TRACE("Instance buffer bound");
@@ -135,11 +130,9 @@ void OpenGLBifrost::bindInstanceBuffer(std::shared_ptr<Pipeline> pipeline, std::
 void OpenGLBifrost::bindIndexBuffer(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Buffer> buffer) {
     if (pipeline == nullptr) {
         ENGINE_LOG_CRITICAL("Pipeline is null");
-        throw std::runtime_error("Pipeline is null");
     }
     if (buffer == nullptr) {
         ENGINE_LOG_CRITICAL("Buffer is null");
-        throw std::runtime_error("Buffer is null");
     }
     pipeline->bindIndexBuffer(buffer);
     ENGINE_LOG_TRACE("Index buffer bound");
@@ -157,7 +150,6 @@ std::shared_ptr<Pipeline> OpenGLBifrost::createPipeline(PipelineInfo& info) {
 void OpenGLBifrost::bindPipeline(Pipeline* pipeline) {
     if (pipeline == nullptr) {
         ENGINE_LOG_CRITICAL("Not a valid pipeline");
-        throw std::runtime_error("Not a valid pipeline");
     }
     ENGINE_LOG_TRACE("Binding pipeline...");
     GLuint shaderProgram = static_cast<OpenGLPipeline*>(pipeline)->getShaderProgramID();
@@ -173,11 +165,9 @@ std::shared_ptr<Texture> OpenGLBifrost::createTexture(const TextureDesc& desc) {
 void OpenGLBifrost::bindTexture(std::shared_ptr<Pipeline> pipeline, std::shared_ptr<Texture> texture, uint32_t slot) {
     if (pipeline == nullptr) {
         ENGINE_LOG_CRITICAL("Pipeline is null");
-        throw std::runtime_error("Pipeline is null");
     }
     if (texture == nullptr) {
         ENGINE_LOG_CRITICAL("Texture is null");
-        throw std::runtime_error("Texture is null");
     }
     pipeline->bindTexture(texture, slot);
     ENGINE_LOG_TRACE("Texture bound");

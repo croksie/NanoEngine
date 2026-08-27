@@ -11,7 +11,6 @@ namespace midgard::platform {
 Window::Window() {
     if (!glfwInit()) {
         ENGINE_LOG_CRITICAL("Error while initializing GLFW");
-        throw std::runtime_error("Error while initializing GLFW");
     }
 }
 
@@ -30,7 +29,6 @@ void Window::initializeWindow(const int width, const int height, const char* tit
     if (!m_window) {
         glfwTerminate();
         ENGINE_LOG_CRITICAL("Error while creating window");
-        throw std::runtime_error("Error while creating window");
     }
     
     ENGINE_LOG_DEBUG("Window created");
