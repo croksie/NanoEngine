@@ -2,6 +2,7 @@
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aCol;
 layout (location = 2) in vec2 aTexCoord;
+layout (location = 3) in mat4 aInstanceModel; 
 
 layout (location = 0) out vec3 ourColor;
 layout (location = 1) out vec2 TexCoord;
@@ -11,12 +12,8 @@ layout (std140, binding = 0) uniform GlobalData {
     mat4 projection;
 } u_Global;
 
-layout (std140, binding = 1) uniform LocalData {
-    mat4 model;
-} u_Local;
-
 void main() {
-    gl_Position = u_Global.projection * u_Global.view * u_Local.model * vec4(aPos, 1.0);
+    gl_Position = u_Global.projection * u_Global.view * aInstanceModel * vec4(aPos, 1.0);
     ourColor = aCol;
     TexCoord = aTexCoord;
 }
