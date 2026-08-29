@@ -1,5 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+cmake_minimum_required(VERSION 4.4)
 
 # ==============================================================================
 # Project Setup
@@ -18,180 +17,128 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compilation database for LSP / IDE IntelliSense
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Enable FetchContent module
-include(FetchContent)
+# Output binaries and DLLs to bin/
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin/Debug")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin/Release")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 # ==============================================================================
-# System Dependencies
+# Dependencies (via vcpkg)
 # ==============================================================================
 
-# Vulkan SDK
-message(STATUS "[Midgard] Searching for Vulkan SDK...")
+# 1. Windowing & Graphics APIs
+message(STATUS "[Midgard] Finding GLFW3...")
+find_package(glfw3 CONFIG REQUIRED)
+
+message(STATUS "[Midgard] Finding OpenGL...")
+find_package(OpenGL REQUIRED)
+
+message(STATUS "[Midgard] Finding GLAD...")
+find_package(glad CONFIG REQUIRED)
+
+message(STATUS "[Midgard] Finding Vulkan...")
 find_package(Vulkan REQUIRED)
 
-find_library(SHADERC_LIB NAMES shaderc_shared shaderc_combined HINTS $ENV{VULKAN_SDK}/lib)
-if(SHADERC_LIB)
-    message(STATUS "[Midgard] Found shaderc library: ${SHADERC_LIB}")
-    add_library(shaderc INTERFACE)
-    target_link_libraries(shaderc INTERFACE "${SHADERC_LIB}")
-    target_include_directories(shaderc INTERFACE "${Vulkan_INCLUDE_DIR}")
+# 2. Math, Images & 3D Assets
+message(STATUS "[Midgard] Finding GLM...")
+find_package(glm CONFIG REQUIRED)
+
+message(STATUS "[Midgard] Finding stb...")
+find_package(stb CONFIG QUIET)
+if(NOT TARGET stb::stb)
+    find_package(Stb REQUIRED)
+    add_library(stb::stb INTERFACE IMPORTED)
+    target_include_directories(stb::stb INTERFACE ${Stb_INCLUDE_DIR})
 endif()
 
-# Optional GLSL shader compiler (glslc)
-find_program(GLSLC_EXECUTABLE NAMES glslc HINTS ${Vulkan_GLSLC_EXECUTABLE} $ENV{VULKAN_SDK}/bin)
-if(GLSLC_EXECUTABLE)
-    message(STATUS "[Midgard] Found Vulkan GLSL compiler (glslc): ${GLSLC_EXECUTABLE}")
+message(STATUS "[Midgard] Finding Assimp...")
+find_package(assimp CONFIG REQUIRED)
+
+# 3. Logging & UI
+message(STATUS "[Midgard] Finding spdlog...")
+find_package(spdlog CONFIG REQUIRED)
+
+message(STATUS "[Midgard] Finding Dear ImGui...")
+find_package(imgui CONFIG REQUIRED)
+
+# 4. Vulkan Utilities & Shaders
+message(STATUS "[Midgard] Finding vk-bootstrap...")
+find_package(vk-bootstrap CONFIG REQUIRED)
+
+# Shaderc (vcpkg unofficial-shaderc or Vulkan SDK fallback)
+find_package(unofficial-shaderc CONFIG QUIET)
+if(TARGET unofficial::shaderc::shaderc)
+    add_library(shaderc_target INTERFACE)
+    target_link_libraries(shaderc_target INTERFACE unofficial::shaderc::shaderc)
+elseif(TARGET unofficial::shaderc::shaderc_shared)
+    add_library(shaderc_target INTERFACE)
+    target_link_libraries(shaderc_target INTERFACE unofficial::shaderc::shaderc_shared)
+elseif(TARGET unofficial::shaderc::shaderc_combined)
+    add_library(shaderc_target INTERFACE)
+    target_link_libraries(shaderc_target INTERFACE unofficial::shaderc::shaderc_combined)
+else()
+    find_library(SHADERC_LIB NAMES shaderc_shared shaderc_combined shaderc HINTS $ENV{VULKAN_SDK}/lib)
+    if(SHADERC_LIB)
+        message(STATUS "[Midgard] Found shaderc library from Vulkan SDK: ${SHADERC_LIB}")
+        add_library(shaderc_target INTERFACE)
+        target_link_libraries(shaderc_target INTERFACE "${SHADERC_LIB}")
+        target_include_directories(shaderc_target INTERFACE "${Vulkan_INCLUDE_DIRS}")
+    else()
+        message(WARNING "[Midgard] shaderc library not found, shader compilation at runtime might be unavailable.")
+        add_library(shaderc_target INTERFACE)
+    endif()
 endif()
-
-# ==============================================================================
-# External Libraries (FetchContent)
-# ==============================================================================
-
-# 1. GLFW (Windowing & Input)
-message(STATUS "[Midgard] Fetching GLFW 3.4...")
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG        3.4
-)
-FetchContent_MakeAvailable(glfw)
-
-# 2. GLM (OpenGL Mathematics)
-message(STATUS "[Midgard] Fetching GLM 1.0.1...")
-FetchContent_Declare(
-    glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG        1.0.1
-)
-FetchContent_MakeAvailable(glm)
-
-# 3. GLAD (OpenGL Loader Generator)
-message(STATUS "[Midgard] Fetching GLAD...")
-set(GLAD_PROFILE "core" CACHE STRING "" FORCE)
-set(GLAD_ALL_EXTENSIONS ON CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    glad
-    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-    GIT_TAG        v0.1.36
-)
-FetchContent_MakeAvailable(glad)
-
-# 4. stb (Header-only Image Loading)
-message(STATUS "[Midgard] Fetching stb...")
-FetchContent_Declare(
-    stb
-    GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG        master
-)
-FetchContent_MakeAvailable(stb)
-
-add_library(stb INTERFACE)
-target_include_directories(stb INTERFACE ${stb_SOURCE_DIR})
-
-# 5. Dear ImGui (UI & Debug Overlay)
-message(STATUS "[Midgard] Fetching Dear ImGui v1.91.8...")
-FetchContent_Declare(
-    imgui
-    GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG        v1.91.8
-)
-FetchContent_MakeAvailable(imgui)
-
-add_library(imgui STATIC
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
-)
-target_include_directories(imgui PUBLIC
-    ${imgui_SOURCE_DIR}
-    ${imgui_SOURCE_DIR}/backends
-)
-target_link_libraries(imgui PUBLIC glfw glad Vulkan::Vulkan)
-
-# 6. spdlog (Fast C++ Logging Library)
-message(STATUS "[Midgard] Fetching spdlog v1.14.1...")
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG        v1.14.1
-)
-FetchContent_MakeAvailable(spdlog)
-
-# 7. vk-bootstrap
-message(STATUS "[Midgard] Fetching vk-bootstrap v1.3.296...")
-FetchContent_Declare(
-    vk-bootstrap
-    GIT_REPOSITORY https://github.com/charles-lunarg/vk-bootstrap.git
-    GIT_TAG        v1.3.296
-)
-FetchContent_MakeAvailable(vk-bootstrap)
-
-# 8. assimp
-message(STATUS "[Midgard] Fetching Assimp...")
-FetchContent_Declare(
-    assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG        v6.0.5
-)
-FetchContent_MakeAvailable(assimp)
 
 # ==============================================================================
 # Executable & Build Target
 # ==============================================================================
 
-# Collect engine source and header files
-file(GLOB_RECURSE ENGINE_SOURCES "src/*.cpp" "src/*.h")
+# Collect engine sources and headers
+file(GLOB_RECURSE ENGINE_SOURCES 
+    "src/*.cpp" 
+    "src/*.c" 
+    "src/*.h" 
+    "src/*.hpp"
+)
 
-# Define target executable
 add_executable(Midgard
     main.cpp
     ${ENGINE_SOURCES}
 )
 
-# Target include directories
+# Include directories
 target_include_directories(Midgard PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# Target compiler options
+# Compiler options
 if(MSVC)
     target_compile_options(Midgard PRIVATE /W4 /utf-8)
 else()
     target_compile_options(Midgard PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-target_compile_options(Midgard PRIVATE -DDEBUG)
-target_compile_definitions(Midgard PRIVATE 
+
+# Compiler definitions
+target_compile_definitions(Midgard PRIVATE
     GLM_FORCE_DEPTH_ZERO_TO_ONE
     GLFW_INCLUDE_NONE
     ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
+    $<$<CONFIG:Debug>:DEBUG>
 )
 
-
-# Target linked libraries
+# Link dependencies
 target_link_libraries(Midgard PRIVATE
     glfw
-    glad
-    glm::glm
-    stb
-    imgui
-    spdlog::spdlog
+    OpenGL::GL
+    glad::glad
     Vulkan::Vulkan
-    shaderc
-    vk-bootstrap::vk-bootstrap
+    glm::glm
+    stb::stb
     assimp::assimp
+    spdlog::spdlog
+    imgui::imgui
+    vk-bootstrap::vk-bootstrap
+    shaderc_target
 )
-
-# Platform-specific dependencies
-if(WIN32)
-    target_link_libraries(Midgard PRIVATE opengl32)
-endif()

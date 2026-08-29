@@ -1,0 +1,23 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "midgard-engine",
+    "dependencies": [
+        "glfw3",
+        "glm",
+        "glad",
+        "stb",
+        {
+            "name": "imgui",
+            "features": [
+                "glfw-binding",
+                "opengl3-binding",
+                "vulkan-binding"
+            ]
+        },
+        "spdlog",
+        "vulkan",
+        "vk-bootstrap",
+        "shaderc",
+        "assimp"
+    ]
+}
