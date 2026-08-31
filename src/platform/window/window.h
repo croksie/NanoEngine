@@ -17,7 +17,8 @@ public:
     void setWindowSizeCallback(SizeCallback cb) { m_onSizeChanged = cb; }
 
     void* getNativeHandle() const { return static_cast<void*>(m_window); }
-    bool windowSouldClose() const { return glfwWindowShouldClose(m_window); }
+    bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
+    void requestWindowClose() const;
     void setCursorMode(bool disabled);
 
 private:

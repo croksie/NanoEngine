@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "platform/window/window.h"
+#include "platform/input/input.h"
 #include "core/config.h"
 #include "rendering/renderer.h"
 #include "utils/log.h"
@@ -10,6 +11,7 @@ int main()
 {
     auto config = std::make_shared<midgard::core::EngineConfig>();
     config->api = midgard::core::GraphicsAPI::Vulkan;
+    config->vsync = false;
 
     #ifdef DEBUG
         spdlog::set_level(spdlog::level::debug);
@@ -25,10 +27,16 @@ int main()
     midgard::render::Renderer renderer;
     renderer.initialize(&window, config);
 
+    midgard::platform::Input::addKeyCallback([&window](midgard::platform::KeyCode key, midgard::platform::Action action) {
+        if (key == midgard::platform::KeyCode::Escape && action == midgard::platform::Action::Press) {
+            window.requestWindowClose();
+        }
+    });
+
     static auto lastTime = std::chrono::high_resolution_clock::now();
     static int frameCount = 0;
 
-    while(!window.windowSouldClose()) {
+    while(!window.windowShouldClose()) {
         renderer.render();
 
         // FPS Counter

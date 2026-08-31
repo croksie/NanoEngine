@@ -25,12 +25,20 @@ void Input::getMousePosition(double &x, double &y) {
     glfwGetCursorPos(m_window, &x, &y);
 }
 
-void Input::addKeyCallback(KeyCallback callback) {
-    // TODO : implements
+void Input::addKeyCallback(const KeyCallback& callback) {
+    m_keyCallbacks.push_back(callback);
 }
 
 void Input::glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    // TODO : implements
+    (void)window;
+    (void)scancode;
+    (void)mods;
+    KeyCode keyCode = static_cast<KeyCode>(key);
+    Action actionType = static_cast<Action>(action);
+
+    for (const auto& callback : m_keyCallbacks) {
+        callback(keyCode, actionType);
+    }
 }
 
 } // namespace midgard::platform

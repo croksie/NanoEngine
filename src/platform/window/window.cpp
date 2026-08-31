@@ -4,6 +4,7 @@
 
 #include "utils/log.h"
 #include "platform/input/input.h"
+#include "window.h"
 
 
 namespace midgard::platform {
@@ -16,6 +17,11 @@ Window::Window() {
 
 void Window::initializeWindow(const int width, const int height, const char* title) {
     m_window = glfwCreateWindow(width, height, title, NULL, NULL);
+
+    if (!m_window) {
+        glfwTerminate();
+        ENGINE_LOG_CRITICAL("Error while creating window");
+    }
     glfwSetWindowUserPointer(m_window, this);
 
     glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int width, int height) {
@@ -26,18 +32,20 @@ void Window::initializeWindow(const int width, const int height, const char* tit
         }
     });
 
-    if (!m_window) {
-        glfwTerminate();
-        ENGINE_LOG_CRITICAL("Error while creating window");
-    }
-    
     ENGINE_LOG_DEBUG("Window created");
 
     glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     Input::init(m_window);
 }
 
-void Window::setCursorMode(bool disabled) {
+void Window::requestWindowClose() const {
+    if (m_window) {
+        glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+    }
+}
+
+void Window::setCursorMode(bool disabled)
+{
     if (m_window) {
         glfwSetInputMode(m_window, GLFW_CURSOR, disabled ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }

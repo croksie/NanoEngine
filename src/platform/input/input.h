@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <vector>
 
 #include <GLFW/glfw3.h>
 
@@ -18,12 +19,13 @@ public:
     using KeyCallback = std::function<void(KeyCode key, Action action)>;
     using ScrollCallback = std::function<void(double xOffset, double yOffset)>;
 
-    static void addKeyCallback(KeyCallback callback);
+    static void addKeyCallback(const KeyCallback& callback);
 
 private:
     static void glfwKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
     inline static GLFWwindow* m_window = nullptr;
+    inline static std::vector<KeyCallback> m_keyCallbacks;
 };
 
 } // namespace midgard::platform
