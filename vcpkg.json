@@ -1,6 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
     "name": "midgard-engine",
+    "builtin-baseline": "3f7b5a12ef0a55e7b59339b2b69cac4b56d6dbf9",
     "dependencies": [
         "glfw3",
         "glm",
