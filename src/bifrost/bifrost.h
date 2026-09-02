@@ -51,12 +51,12 @@ public:
 
     /**
      * @brief Begins a new frame for rendering.
-     * This function should be called at the start of each frame.
+     * @note This function should be called at the start of each frame.
      */
     virtual void beginFrame() = 0;
     /**
      * @brief Ends the current frame.
-     * This function should be called at the end of each frame.
+     * @note This function should be called at the end of each frame.
      */
     virtual void endFrame() = 0;
     /**
@@ -152,7 +152,7 @@ public:
     virtual void initialize(platform::Window* window, std::shared_ptr<core::EngineConfig> config) = 0;
     /**
      * @brief Shutdown the Bifrost API.
-     * This function should be called after all buffers, pipelines, and textures have been destroyed.
+     * @warning This function should be called after all buffers, pipelines, and textures have been destroyed.
      */
     virtual void shutdown() = 0;
 };
